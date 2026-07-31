@@ -1,0 +1,504 @@
+{
+  "$ref": "#/definitions/knowledge",
+  "definitions": {
+    "knowledge": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "schema_version": {
+              "type": "string"
+            },
+            "id": {
+              "type": "string"
+            },
+            "source_ref": {
+              "type": "string"
+            },
+            "confidence": {
+              "type": "string",
+              "enum": [
+                "high",
+                "medium",
+                "low"
+              ],
+              "default": "medium"
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "active",
+                "superseded"
+              ],
+              "default": "active"
+            },
+            "supersedes": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "default": null
+            },
+            "applicability": {
+              "type": "string"
+            },
+            "paths": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": []
+            },
+            "path_prefixes": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": []
+            },
+            "summary": {
+              "type": "string"
+            },
+            "detail": {
+              "type": "string"
+            },
+            "tags": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": []
+            },
+            "source_intent_id": {
+              "type": "string"
+            },
+            "created_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "provenance": {
+              "type": "string",
+              "enum": [
+                "lane",
+                "imported_legacy_memories"
+              ],
+              "default": "lane"
+            },
+            "scope": {
+              "type": "string",
+              "const": "global"
+            },
+            "type": {
+              "type": "string",
+              "const": "review_finding"
+            },
+            "taxonomy": {
+              "type": "string",
+              "enum": [
+                "missing_state",
+                "wrong_assumption",
+                "too_implementation_specific",
+                "test_missing",
+                "architecture_violation",
+                "compatibility_missed",
+                "context_variant_missed",
+                "lifecycle_missed",
+                "scope_ambiguity",
+                "observability_gap"
+              ]
+            },
+            "evidence": {
+              "type": "string",
+              "minLength": 1
+            },
+            "resolution": {
+              "type": "string",
+              "enum": [
+                "fixed",
+                "wontfix",
+                "deferred"
+              ]
+            }
+          },
+          "required": [
+            "schema_version",
+            "id",
+            "summary",
+            "created_at",
+            "scope",
+            "type",
+            "taxonomy",
+            "evidence",
+            "resolution"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "schema_version": {
+              "type": "string"
+            },
+            "id": {
+              "type": "string"
+            },
+            "source_ref": {
+              "type": "string"
+            },
+            "confidence": {
+              "type": "string",
+              "enum": [
+                "high",
+                "medium",
+                "low"
+              ],
+              "default": "medium"
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "active",
+                "superseded"
+              ],
+              "default": "active"
+            },
+            "supersedes": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "default": null
+            },
+            "applicability": {
+              "type": "string"
+            },
+            "paths": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": []
+            },
+            "path_prefixes": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": []
+            },
+            "summary": {
+              "type": "string"
+            },
+            "detail": {
+              "type": "string"
+            },
+            "tags": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": []
+            },
+            "source_intent_id": {
+              "type": "string"
+            },
+            "created_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "provenance": {
+              "type": "string",
+              "enum": [
+                "lane",
+                "imported_legacy_memories"
+              ],
+              "default": "lane"
+            },
+            "scope": {
+              "type": "string",
+              "const": "global"
+            },
+            "type": {
+              "type": "string",
+              "const": "review_decision"
+            },
+            "context": {
+              "type": "string",
+              "minLength": 1
+            },
+            "rationale": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "schema_version",
+            "id",
+            "summary",
+            "created_at",
+            "scope",
+            "type",
+            "context",
+            "rationale"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "schema_version": {
+              "type": "string"
+            },
+            "id": {
+              "type": "string"
+            },
+            "source_ref": {
+              "type": "string"
+            },
+            "confidence": {
+              "type": "string",
+              "enum": [
+                "high",
+                "medium",
+                "low"
+              ],
+              "default": "medium"
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "active",
+                "superseded"
+              ],
+              "default": "active"
+            },
+            "supersedes": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "default": null
+            },
+            "applicability": {
+              "type": "string"
+            },
+            "paths": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": []
+            },
+            "path_prefixes": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": []
+            },
+            "summary": {
+              "type": "string"
+            },
+            "detail": {
+              "type": "string"
+            },
+            "tags": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": []
+            },
+            "source_intent_id": {
+              "type": "string"
+            },
+            "created_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "provenance": {
+              "type": "string",
+              "enum": [
+                "lane",
+                "imported_legacy_memories"
+              ],
+              "default": "lane"
+            },
+            "scope": {
+              "type": "string",
+              "const": "scoped"
+            },
+            "repo_id": {
+              "type": "string"
+            },
+            "profile_id": {
+              "type": "string"
+            },
+            "type": {
+              "type": "string",
+              "const": "review_finding"
+            },
+            "taxonomy": {
+              "type": "string",
+              "enum": [
+                "missing_state",
+                "wrong_assumption",
+                "too_implementation_specific",
+                "test_missing",
+                "architecture_violation",
+                "compatibility_missed",
+                "context_variant_missed",
+                "lifecycle_missed",
+                "scope_ambiguity",
+                "observability_gap"
+              ]
+            },
+            "evidence": {
+              "type": "string",
+              "minLength": 1
+            },
+            "resolution": {
+              "type": "string",
+              "enum": [
+                "fixed",
+                "wontfix",
+                "deferred"
+              ]
+            }
+          },
+          "required": [
+            "schema_version",
+            "id",
+            "summary",
+            "created_at",
+            "scope",
+            "repo_id",
+            "type",
+            "taxonomy",
+            "evidence",
+            "resolution"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "schema_version": {
+              "type": "string"
+            },
+            "id": {
+              "type": "string"
+            },
+            "source_ref": {
+              "type": "string"
+            },
+            "confidence": {
+              "type": "string",
+              "enum": [
+                "high",
+                "medium",
+                "low"
+              ],
+              "default": "medium"
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "active",
+                "superseded"
+              ],
+              "default": "active"
+            },
+            "supersedes": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "default": null
+            },
+            "applicability": {
+              "type": "string"
+            },
+            "paths": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": []
+            },
+            "path_prefixes": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": []
+            },
+            "summary": {
+              "type": "string"
+            },
+            "detail": {
+              "type": "string"
+            },
+            "tags": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": []
+            },
+            "source_intent_id": {
+              "type": "string"
+            },
+            "created_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "provenance": {
+              "type": "string",
+              "enum": [
+                "lane",
+                "imported_legacy_memories"
+              ],
+              "default": "lane"
+            },
+            "scope": {
+              "type": "string",
+              "const": "scoped"
+            },
+            "repo_id": {
+              "type": "string"
+            },
+            "profile_id": {
+              "type": "string"
+            },
+            "type": {
+              "type": "string",
+              "const": "review_decision"
+            },
+            "context": {
+              "type": "string",
+              "minLength": 1
+            },
+            "rationale": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "schema_version",
+            "id",
+            "summary",
+            "created_at",
+            "scope",
+            "repo_id",
+            "type",
+            "context",
+            "rationale"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": false,
+    "noEmit": true
+  },
+  "include": ["src", "test"],
+  "references": [
+    { "path": "../adapters/tsconfig.build.json" },
+    { "path": "../core/tsconfig.build.json" },
+    { "path": "../schemas/tsconfig.build.json" }
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "valid": [
+    {
+      "occurred_at_utc": "2026-07-31T00:10:00Z",
+      "agent": "claude",
+      "session_id": "sess-0001",
+      "model_key": "claude-fable-5",
+      "token_kind": "input_nocache",
+      "tokens": 1200,
+      "mode": "normal",
+      "source_quality": "ok"
+    },
+    {
+      "occurred_at_utc": "2026-07-31T00:11:00Z",
+      "agent": "codex",
+      "session_id": null,
+      "model_key": "gpt-5.4",
+      "token_kind": "output",
+      "tokens": 340
+    }
+  ],
+  "invalidStructural": [
+    {
+      "description": "agent has an enum value that does not exist",
+      "input": {
+        "occurred_at_utc": "2026-07-31T00:10:00Z",
+        "agent": "gemini",
+        "session_id": null,
+        "model_key": "x",
+        "token_kind": "output",
+        "tokens": 1
+      }
+    },
+    {
+      "description": "tokens is negative",
+      "input": {
+        "occurred_at_utc": "2026-07-31T00:10:00Z",
+        "agent": "claude",
+        "session_id": null,
+        "model_key": "x",
+        "token_kind": "output",
+        "tokens": -5
+      }
+    },
+    {
+      "description": "missing required field model_key",
+      "input": {
+        "occurred_at_utc": "2026-07-31T00:10:00Z",
+        "agent": "claude",
+        "session_id": null,
+        "token_kind": "output",
+        "tokens": 1
+      }
+    }
+  ]
+}

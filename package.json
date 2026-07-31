@@ -1,0 +1,24 @@
+{
+  "name": "lane-monorepo",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "pnpm -r --if-present run build",
+    "typecheck": "tsc -b",
+    "test": "pnpm -r --if-present run test",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "depcheck": "dependency-cruiser --config .dependency-cruiser.cjs --validate packages/*/src",
+    "generate:json-schema": "pnpm --filter @lane/schemas run generate:json-schema"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@types/node": "^22.10.2",
+    "dependency-cruiser": "^16.9.0",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

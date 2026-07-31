@@ -1,0 +1,220 @@
+{
+  "$ref": "#/definitions/intent",
+  "definitions": {
+    "intent": {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+(\\.\\d+)?$"
+        },
+        "intent_id": {
+          "type": "string",
+          "pattern": "^I-\\d{4}-\\d{2}-\\d{2}-[a-z0-9-]+$"
+        },
+        "tracker_id": {
+          "type": "string"
+        },
+        "tracker_url": {
+          "type": "string"
+        },
+        "target_pr": {
+          "type": "string",
+          "pattern": "^[a-z0-9-]+\\/[a-z0-9-]+#\\d+$"
+        },
+        "execution_mode": {
+          "type": "string",
+          "enum": [
+            "manual",
+            "semi_auto",
+            "auto"
+          ],
+          "default": "manual"
+        },
+        "budget": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "provider": {
+                "type": "string",
+                "enum": [
+                  "claude",
+                  "codex",
+                  "any"
+                ]
+              },
+              "unit": {
+                "type": "string",
+                "enum": [
+                  "usd",
+                  "credits"
+                ]
+              },
+              "limit": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              }
+            },
+            "required": [
+              "provider",
+              "unit",
+              "limit"
+            ],
+            "additionalProperties": false
+          },
+          "default": []
+        },
+        "estimate_ref": {
+          "type": "string",
+          "description": "Path to estimate.json (docs/spec/<intent-id>/estimate.json)."
+        },
+        "baseline_estimate_revision_id": {
+          "type": "string",
+          "description": "Adopted EstimateRevision.revision_id. lane next etc. only ever read this."
+        },
+        "baseline_adopted_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When baseline_estimate_revision_id was last set via adoptBaselineRevision()."
+        },
+        "intent": {
+          "type": "object",
+          "properties": {
+            "business_goal": {
+              "type": "string",
+              "minLength": 10
+            },
+            "user_visible_intent": {
+              "type": "string",
+              "minLength": 10
+            },
+            "success": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1
+            },
+            "non_goal": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": []
+            },
+            "constraints": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": []
+            },
+            "primary_user": {
+              "type": "string"
+            },
+            "state_segments": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": []
+            },
+            "known_affected_behavior": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": []
+            },
+            "declared_risk": {
+              "type": "string",
+              "enum": [
+                "low",
+                "medium",
+                "high"
+              ]
+            }
+          },
+          "required": [
+            "business_goal",
+            "user_visible_intent",
+            "success",
+            "primary_user",
+            "declared_risk"
+          ],
+          "additionalProperties": false
+        },
+        "ai_inferred_scope": {
+          "type": "object",
+          "properties": {
+            "affected_layers": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1
+            },
+            "related_files": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": []
+            },
+            "required_docs": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": []
+            },
+            "confidence": {
+              "type": "string",
+              "enum": [
+                "high",
+                "medium",
+                "low"
+              ]
+            },
+            "open_questions": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": []
+            },
+            "allowed_paths": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1
+            },
+            "forbidden_paths": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": []
+            }
+          },
+          "required": [
+            "affected_layers",
+            "confidence",
+            "allowed_paths"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "schema_version",
+        "intent_id",
+        "intent",
+        "ai_inferred_scope"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

@@ -1,0 +1,309 @@
+{
+  "$ref": "#/definitions/estimate",
+  "definitions": {
+    "estimate": {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "type": "string"
+        },
+        "intent_id": {
+          "type": "string"
+        },
+        "revisions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "revision_id": {
+                "type": "string"
+              },
+              "estimated_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "as_of_phase": {
+                "type": "string",
+                "enum": [
+                  "1_intent",
+                  "2_spec",
+                  "3_implement",
+                  "4_verify",
+                  "5_done"
+                ]
+              },
+              "repo_commit": {
+                "type": "string"
+              },
+              "impact_scan_snapshot": {
+                "type": "object",
+                "properties": {
+                  "scan_version": {
+                    "type": "string"
+                  },
+                  "repo_commit": {
+                    "type": "string"
+                  },
+                  "candidate_paths": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "candidate_layers": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "open_items": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "default": []
+                  },
+                  "digest": {
+                    "type": "string",
+                    "description": "sha256 of candidate_paths+layers, for reproducibility checks."
+                  }
+                },
+                "required": [
+                  "scan_version",
+                  "repo_commit",
+                  "candidate_paths",
+                  "candidate_layers",
+                  "digest"
+                ],
+                "additionalProperties": false
+              },
+              "estimator_version": {
+                "type": "string"
+              },
+              "predictors": {
+                "type": "object",
+                "properties": {
+                  "files_touched_estimate": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "files_touched_observed": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "layers_crossed": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "risk_class": {
+                    "type": "string",
+                    "enum": [
+                      "low",
+                      "medium",
+                      "high"
+                    ]
+                  },
+                  "spec_rule_count": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "novel_surface": {
+                    "type": "string",
+                    "enum": [
+                      "true",
+                      "false",
+                      "unknown"
+                    ]
+                  }
+                },
+                "required": [
+                  "files_touched_estimate",
+                  "files_touched_observed",
+                  "layers_crossed",
+                  "risk_class",
+                  "spec_rule_count",
+                  "novel_surface"
+                ],
+                "additionalProperties": false
+              },
+              "predicted": {
+                "type": "object",
+                "properties": {
+                  "tokens": {
+                    "type": "object",
+                    "properties": {
+                      "p50": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "p80": {
+                        "type": "number",
+                        "minimum": 0
+                      }
+                    },
+                    "required": [
+                      "p50",
+                      "p80"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "cycle_time_min": {
+                    "type": "object",
+                    "properties": {
+                      "p50": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "p80": {
+                        "type": "number",
+                        "minimum": 0
+                      }
+                    },
+                    "required": [
+                      "p50",
+                      "p80"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "cost_usd": {
+                    "type": "object",
+                    "properties": {
+                      "p50": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "p80": {
+                        "type": "number",
+                        "minimum": 0
+                      }
+                    },
+                    "required": [
+                      "p50",
+                      "p80"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "tokens",
+                  "cost_usd"
+                ],
+                "additionalProperties": false
+              },
+              "neighbors": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "intent_id": {
+                      "type": "string"
+                    },
+                    "distance": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "measurement_quality": {
+                      "type": "string",
+                      "enum": [
+                        "observed",
+                        "reconstructed",
+                        "imputed"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "intent_id",
+                    "distance",
+                    "measurement_quality"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "population_condition": {
+                "type": "object",
+                "properties": {
+                  "population_size": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "method": {
+                    "type": "string",
+                    "enum": [
+                      "knn_quantile",
+                      "reference_table",
+                      "manual_fallback"
+                    ]
+                  },
+                  "experimental": {
+                    "type": "boolean",
+                    "description": "Always true when population_size < 30."
+                  },
+                  "leave_one_out_p50_error": {
+                    "type": "number"
+                  },
+                  "leave_one_out_p80_coverage": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "population_size",
+                  "method",
+                  "experimental"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "revision_id",
+              "estimated_at",
+              "as_of_phase",
+              "repo_commit",
+              "estimator_version",
+              "predictors",
+              "predicted",
+              "neighbors",
+              "population_condition"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "schema_version",
+        "intent_id",
+        "revisions"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

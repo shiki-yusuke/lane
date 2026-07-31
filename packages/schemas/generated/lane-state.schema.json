@@ -1,0 +1,571 @@
+{
+  "$ref": "#/definitions/lane-state",
+  "definitions": {
+    "lane-state": {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "type": "string",
+          "const": "2.0"
+        },
+        "intent_id": {
+          "type": "string"
+        },
+        "tracker_url": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "pr_url": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "pr_provenance": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "advance",
+                "done_overlay",
+                "sync_done"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "owner": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "current_phase": {
+          "type": "string",
+          "enum": [
+            "1_intent",
+            "2_spec",
+            "3_implement",
+            "4_verify",
+            "5_done"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "pending",
+            "running",
+            "paused",
+            "completed",
+            "aborted"
+          ]
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "phase_history": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "phase": {
+                "type": "string",
+                "enum": [
+                  "1_intent",
+                  "2_spec",
+                  "3_implement",
+                  "4_verify",
+                  "5_done"
+                ]
+              },
+              "started_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "ended_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "result": {
+                "type": "string",
+                "enum": [
+                  "in_progress",
+                  "completed",
+                  "halted",
+                  "needs_revision",
+                  "aborted"
+                ]
+              },
+              "retry_count": {
+                "type": "integer",
+                "minimum": 0,
+                "default": 0
+              }
+            },
+            "required": [
+              "phase",
+              "started_at",
+              "result"
+            ],
+            "additionalProperties": false
+          },
+          "default": []
+        },
+        "halt_info": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "halt_type": {
+                  "type": "string",
+                  "enum": [
+                    "hard",
+                    "retry_exceeded",
+                    "needs_revision_escalated"
+                  ]
+                },
+                "halt_reason": {
+                  "type": "string"
+                },
+                "failing_command": {
+                  "type": "string"
+                },
+                "critic_excerpt": {
+                  "type": "string"
+                },
+                "paused_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "user_instruction": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "default": null
+                }
+              },
+              "required": [
+                "halt_type",
+                "halt_reason",
+                "paused_at"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "retry_log": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "fingerprint": {
+                "type": "string",
+                "description": "failure kind + error signature"
+              },
+              "count": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "limit": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "last_seen_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "fingerprint",
+              "count"
+            ],
+            "additionalProperties": false
+          },
+          "default": []
+        },
+        "effective_risk_log": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "gate_id": {
+                "type": "string"
+              },
+              "effective_risk": {
+                "type": "string",
+                "enum": [
+                  "low",
+                  "medium",
+                  "high"
+                ]
+              },
+              "applied_rule_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "profile_digest": {
+                "type": "string"
+              },
+              "evaluated_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "gate_id",
+              "effective_risk",
+              "applied_rule_ids",
+              "profile_digest",
+              "evaluated_at"
+            ],
+            "additionalProperties": false
+          },
+          "default": []
+        },
+        "mode_resolution_log": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "requested_mode": {
+                "type": "string",
+                "enum": [
+                  "manual",
+                  "semi_auto",
+                  "auto"
+                ]
+              },
+              "effective_mode": {
+                "type": "string",
+                "enum": [
+                  "manual",
+                  "semi_auto",
+                  "auto"
+                ]
+              },
+              "applied_rule_id": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "resolved_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "requested_mode",
+              "effective_mode",
+              "applied_rule_id",
+              "resolved_at"
+            ],
+            "additionalProperties": false
+          },
+          "default": []
+        },
+        "cost_ledger": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "ledger_entry_id": {
+                "type": "string"
+              },
+              "lane_id": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "phase": {
+                "type": "string",
+                "enum": [
+                  "1_intent",
+                  "2_spec",
+                  "3_implement",
+                  "4_verify",
+                  "5_done"
+                ]
+              },
+              "source": {
+                "type": "string",
+                "enum": [
+                  "manual",
+                  "claude_jsonl_auto",
+                  "codex_sqlite_auto"
+                ]
+              },
+              "scope": {
+                "type": "string",
+                "enum": [
+                  "phase",
+                  "lane"
+                ]
+              },
+              "session_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "default": []
+              },
+              "data_state": {
+                "type": "string",
+                "enum": [
+                  "no_data",
+                  "zero_tokens",
+                  "has_usage",
+                  "import_failed",
+                  "superseded"
+                ]
+              },
+              "confidence": {
+                "type": "string",
+                "enum": [
+                  "imported_windowed",
+                  "imported_lane",
+                  "estimated",
+                  "manual"
+                ]
+              },
+              "included_in_kpi": {
+                "type": "boolean"
+              },
+              "tokens": {
+                "anyOf": [
+                  {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "turns": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "cost_usd": {
+                "anyOf": [
+                  {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "cost_credits": {
+                "anyOf": [
+                  {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "pricing_version": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "pricing_as_of": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "imported_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "ledger_entry_id",
+              "lane_id",
+              "phase",
+              "source",
+              "scope",
+              "data_state",
+              "confidence",
+              "included_in_kpi",
+              "tokens",
+              "turns",
+              "cost_usd",
+              "cost_credits",
+              "pricing_version",
+              "pricing_as_of",
+              "imported_at"
+            ],
+            "additionalProperties": false
+          },
+          "default": []
+        },
+        "usage_import_attempts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "lane_id": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "phase": {
+                "type": "string",
+                "enum": [
+                  "1_intent",
+                  "2_spec",
+                  "3_implement",
+                  "4_verify",
+                  "5_done"
+                ]
+              },
+              "scope": {
+                "type": "string",
+                "enum": [
+                  "phase",
+                  "lane"
+                ]
+              },
+              "source": {
+                "type": "string",
+                "enum": [
+                  "claude_jsonl_auto",
+                  "codex_sqlite_auto"
+                ]
+              },
+              "exit_status": {
+                "type": "string",
+                "enum": [
+                  "success",
+                  "failed"
+                ]
+              },
+              "data_state": {
+                "type": "string"
+              },
+              "attempted_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "lane_id",
+              "phase",
+              "scope",
+              "source",
+              "exit_status",
+              "data_state",
+              "attempted_at"
+            ],
+            "additionalProperties": false
+          },
+          "default": []
+        },
+        "usage_import_gate_overrides": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "gate_id": {
+                "type": "string"
+              },
+              "reason": {
+                "type": "string"
+              },
+              "actor": {
+                "type": "string"
+              },
+              "overridden_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "gate_id",
+              "reason",
+              "actor",
+              "overridden_at"
+            ],
+            "additionalProperties": false
+          },
+          "default": []
+        },
+        "metrics": {
+          "type": "object",
+          "properties": {
+            "ai_drafted": {
+              "type": "boolean"
+            },
+            "human_intervention_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "halt_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "false_halt_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "rework_commit_count": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "schema_version",
+        "intent_id",
+        "tracker_url",
+        "pr_url",
+        "owner",
+        "current_phase",
+        "status",
+        "created_at"
+      ],
+      "additionalProperties": true
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

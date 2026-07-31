@@ -1,0 +1,113 @@
+{
+  "valid": [
+    {
+      "schema_version": "1.0",
+      "intent_id": "I-2026-07-31-example-feature",
+      "tracker_url": "https://github.com/example/example/issues/123",
+      "execution_mode": "manual",
+      "budget": [{ "provider": "claude", "unit": "usd", "limit": 10 }],
+      "estimate_ref": "docs/spec/I-2026-07-31-example-feature/estimate.json",
+      "baseline_estimate_revision_id": "r1",
+      "baseline_adopted_at": "2026-07-31T09:00:00+09:00",
+      "intent": {
+        "business_goal": "Reduce onboarding time by clarifying setup docs.",
+        "user_visible_intent": "New users see setup steps in order.",
+        "success": ["New user completes setup within 5 minutes."],
+        "non_goal": [],
+        "constraints": [],
+        "primary_user": "new_developer",
+        "state_segments": [],
+        "known_affected_behavior": [],
+        "declared_risk": "low"
+      },
+      "ai_inferred_scope": {
+        "affected_layers": ["docs"],
+        "related_files": [],
+        "required_docs": [],
+        "confidence": "medium",
+        "open_questions": [],
+        "allowed_paths": ["docs/**"],
+        "forbidden_paths": []
+      }
+    }
+  ],
+  "invalidStructural": [
+    {
+      "description": "missing required top-level field intent_id",
+      "input": {
+        "schema_version": "1.0",
+        "intent": {
+          "business_goal": "Reduce onboarding time by clarifying setup docs.",
+          "user_visible_intent": "New users see setup steps in order.",
+          "success": ["ok"],
+          "primary_user": "new_developer",
+          "declared_risk": "low"
+        },
+        "ai_inferred_scope": {
+          "affected_layers": ["docs"],
+          "confidence": "medium",
+          "allowed_paths": ["docs/**"]
+        }
+      }
+    },
+    {
+      "description": "intent_id does not match I-YYYY-MM-DD-slug pattern",
+      "input": {
+        "schema_version": "1.0",
+        "intent_id": "not-a-valid-id",
+        "intent": {
+          "business_goal": "Reduce onboarding time by clarifying setup docs.",
+          "user_visible_intent": "New users see setup steps in order.",
+          "success": ["ok"],
+          "primary_user": "new_developer",
+          "declared_risk": "low"
+        },
+        "ai_inferred_scope": {
+          "affected_layers": ["docs"],
+          "confidence": "medium",
+          "allowed_paths": ["docs/**"]
+        }
+      }
+    },
+    {
+      "description": "execution_mode has an enum value that does not exist",
+      "input": {
+        "schema_version": "1.0",
+        "intent_id": "I-2026-07-31-example-feature",
+        "execution_mode": "fully_autonomous",
+        "intent": {
+          "business_goal": "Reduce onboarding time by clarifying setup docs.",
+          "user_visible_intent": "New users see setup steps in order.",
+          "success": ["ok"],
+          "primary_user": "new_developer",
+          "declared_risk": "low"
+        },
+        "ai_inferred_scope": {
+          "affected_layers": ["docs"],
+          "confidence": "medium",
+          "allowed_paths": ["docs/**"]
+        }
+      }
+    },
+    {
+      "description": "budget is a string instead of an array",
+      "input": {
+        "schema_version": "1.0",
+        "intent_id": "I-2026-07-31-example-feature",
+        "budget": "unlimited",
+        "intent": {
+          "business_goal": "Reduce onboarding time by clarifying setup docs.",
+          "user_visible_intent": "New users see setup steps in order.",
+          "success": ["ok"],
+          "primary_user": "new_developer",
+          "declared_risk": "low"
+        },
+        "ai_inferred_scope": {
+          "affected_layers": ["docs"],
+          "confidence": "medium",
+          "allowed_paths": ["docs/**"]
+        }
+      }
+    }
+  ]
+}

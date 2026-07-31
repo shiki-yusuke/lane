@@ -1,0 +1,253 @@
+{
+  "$ref": "#/definitions/verification",
+  "definitions": {
+    "verification": {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "type": "string"
+        },
+        "intent_id": {
+          "type": "string",
+          "pattern": "^I-\\d{4}-\\d{2}-\\d{2}-[a-z0-9-]+$"
+        },
+        "target_pr": {
+          "type": "string"
+        },
+        "test_matrix": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "ears_rule": {
+                "type": "string",
+                "description": "Corresponds to a \"Rule N (...)\" entry in spec.md."
+              },
+              "test_type": {
+                "type": "string",
+                "enum": [
+                  "unit",
+                  "integration",
+                  "e2e",
+                  "regression",
+                  "manual"
+                ]
+              },
+              "test_file": {
+                "type": "string"
+              },
+              "test_name": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "existing",
+                  "added",
+                  "not_verified",
+                  "failing",
+                  "tbd"
+                ]
+              },
+              "note": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "ears_rule",
+              "test_type",
+              "status"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1
+        },
+        "test_gaps": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "taxonomy": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "location": {
+                "type": "string"
+              },
+              "priority": {
+                "type": "string",
+                "enum": [
+                  "high",
+                  "medium",
+                  "low"
+                ]
+              }
+            },
+            "required": [
+              "taxonomy",
+              "description",
+              "priority"
+            ],
+            "additionalProperties": false
+          },
+          "default": []
+        },
+        "manual_verification": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "expected_status": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "description",
+              "expected_status"
+            ],
+            "additionalProperties": false
+          },
+          "default": []
+        },
+        "goal_stopping_condition": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        },
+        "spec_consensus": {
+          "type": "object",
+          "properties": {
+            "spec_ssot_ref": {
+              "type": "string"
+            },
+            "spec_digest": {
+              "type": "string"
+            },
+            "verification_digest": {
+              "type": "string"
+            },
+            "deviations": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "spec_ref": {
+                    "type": "string"
+                  },
+                  "actual": {
+                    "type": "string"
+                  },
+                  "action": {
+                    "type": "string",
+                    "enum": [
+                      "accept",
+                      "fix",
+                      "update_spec"
+                    ]
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "pending",
+                      "resolved"
+                    ]
+                  },
+                  "rationale": {
+                    "type": "string"
+                  },
+                  "evidence_ref": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "spec_ref",
+                  "actual",
+                  "action",
+                  "status"
+                ],
+                "additionalProperties": false
+              },
+              "default": []
+            },
+            "reviewer_ack": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "reviewer_kind": {
+                      "type": "string",
+                      "enum": [
+                        "self",
+                        "independent_agent",
+                        "human"
+                      ]
+                    },
+                    "reviewer_id": {
+                      "type": "string"
+                    },
+                    "acked_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "spec_sha256": {
+                      "type": "string"
+                    },
+                    "verification_sha256": {
+                      "type": "string"
+                    },
+                    "evidence_ref": {
+                      "type": "string"
+                    },
+                    "note": {
+                      "type": "string"
+                    },
+                    "override_reason": {
+                      "type": "string",
+                      "description": "Required when reviewer_kind=self is used at effective risk_class=high (audited override)."
+                    }
+                  },
+                  "required": [
+                    "reviewer_kind",
+                    "reviewer_id",
+                    "acked_at",
+                    "spec_sha256",
+                    "verification_sha256"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null
+            }
+          },
+          "required": [
+            "spec_ssot_ref",
+            "spec_digest",
+            "verification_digest"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "schema_version",
+        "intent_id",
+        "test_matrix"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

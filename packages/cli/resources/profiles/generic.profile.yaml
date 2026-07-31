@@ -1,0 +1,58 @@
+# lane - Generic (org-neutral) Project Profile
+#
+# This is the package-bundled default profile (design.md §3.7/§6). Org/repo-specific
+# settings (layer ownership, forbidden paths, required commands, extra lenses) do not
+# belong here: put them in a repo-local override instead and select it with
+# `lane <cmd> --profile <id>`.
+#
+# Repo-local override locations (checked before this default, see core/profile.ts):
+#   - <repo>/profiles-local/<id>.profile.yaml
+#   - <repo>/profiles-local/project-profile.<id>.yaml
+#
+# Resolution order (core/profile.ts resolveProfilePath): flag > env(LANE_PROFILE_PATH) >
+# repo_local(profiles-local/) > this package default.
+#
+# rev2 change from the Python reference implementation's generic.profile.yaml (design.md §3.4/§3.5/§12.1):
+# risk_auto_upgrade is a rule array (not a flat high/medium/low bucket list), and
+# distance_caps was added for the k-NN estimator's Gower-style distance normalization.
+
+schema_version: "1.0"
+profile_id: "generic"
+applies_to_repo: "" # overridden by the repo-local profile
+
+existing_ssot: {}
+extra_lenses: []
+layer_ownership: {}
+
+risk_auto_upgrade:
+  - id: "ci-workflow-touch"
+    when:
+      paths: [".github/workflows/**"]
+    upgrade_to: "high"
+    reason: "CI workflow changes can affect every future PR."
+
+required_commands:
+  pre_implement: []
+  during_implement: []
+  pre_pr: []
+  post_implement: []
+
+# Minimal safety net; repo-local overrides should add repo-specific paths.
+forbidden_paths_for_low_risk:
+  - ".github/workflows/**"
+  - "**/migration*"
+
+isomorphism_rules:
+  enabled: true
+  description: "If a similar implementation already exists, match its interface (args/return/JSDoc/comment style)."
+  enforced_in: ["Phase 2 (spec generation)", "Phase 3 (implementation)"]
+
+test_coverage_floor:
+  unit_test_per_ears_rule_minimum: 1
+
+# design.md §12.1: implementation-time default, not derived from any real calibration
+# data yet. Revisit once real calibration observations exist (§3.5).
+distance_caps:
+  files_touched_estimate: 50
+  layers_crossed: 10
+  spec_rule_count: 30

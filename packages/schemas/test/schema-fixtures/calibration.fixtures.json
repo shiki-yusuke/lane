@@ -1,0 +1,108 @@
+{
+  "valid": [
+    {
+      "schema_version": "1.0",
+      "record_id": "cal-0001",
+      "kind": "observation",
+      "intent_id": "I-2026-06-01-past-feature",
+      "recorded_at": "2026-06-01T09:00:00+09:00",
+      "predictors": {
+        "files_touched_estimate": 4,
+        "files_touched_observed": 3,
+        "layers_crossed": 1,
+        "risk_class": "low",
+        "spec_rule_count": 2,
+        "novel_surface": "false"
+      },
+      "predictor_quality": "observed",
+      "actual": { "tokens": 120000, "estimated_cost_usd": 3.1 },
+      "measurement_quality": "observed",
+      "eligible_for_knn": true,
+      "provenance": "measured"
+    },
+    {
+      "schema_version": "1.0",
+      "record_id": "cal-0002",
+      "kind": "prediction_evaluation",
+      "intent_id": "I-2026-06-01-past-feature",
+      "estimate_revision_id": "r1",
+      "evaluated_at": "2026-06-05T09:00:00+09:00",
+      "predicted": {
+        "tokens": { "p50": 100000, "p80": 180000 },
+        "cost_usd": { "p50": 2.5, "p80": 4.5 }
+      },
+      "actual_record_id": "cal-0001",
+      "error": { "tokens": { "relative_error_p50": 0.2, "covered_by_p80": true } }
+    }
+  ],
+  "invalidStructural": [
+    {
+      "description": "kind has a value outside the observation|prediction_evaluation union",
+      "input": {
+        "schema_version": "1.0",
+        "record_id": "cal-0003",
+        "kind": "forecast",
+        "intent_id": "I-2026-06-01-past-feature",
+        "recorded_at": "2026-06-01T09:00:00+09:00",
+        "predictors": {
+          "files_touched_estimate": 4,
+          "files_touched_observed": 3,
+          "layers_crossed": 1,
+          "risk_class": "low",
+          "spec_rule_count": 2,
+          "novel_surface": "false"
+        },
+        "predictor_quality": "observed",
+        "actual": {},
+        "measurement_quality": "observed",
+        "eligible_for_knn": true,
+        "provenance": "measured"
+      }
+    },
+    {
+      "description": "observation missing required field eligible_for_knn",
+      "input": {
+        "schema_version": "1.0",
+        "record_id": "cal-0004",
+        "kind": "observation",
+        "intent_id": "I-2026-06-01-past-feature",
+        "recorded_at": "2026-06-01T09:00:00+09:00",
+        "predictors": {
+          "files_touched_estimate": 4,
+          "files_touched_observed": 3,
+          "layers_crossed": 1,
+          "risk_class": "low",
+          "spec_rule_count": 2,
+          "novel_surface": "false"
+        },
+        "predictor_quality": "observed",
+        "actual": {},
+        "measurement_quality": "observed",
+        "provenance": "measured"
+      }
+    },
+    {
+      "description": "provenance has an enum value that does not exist",
+      "input": {
+        "schema_version": "1.0",
+        "record_id": "cal-0005",
+        "kind": "observation",
+        "intent_id": "I-2026-06-01-past-feature",
+        "recorded_at": "2026-06-01T09:00:00+09:00",
+        "predictors": {
+          "files_touched_estimate": 4,
+          "files_touched_observed": 3,
+          "layers_crossed": 1,
+          "risk_class": "low",
+          "spec_rule_count": 2,
+          "novel_surface": "false"
+        },
+        "predictor_quality": "observed",
+        "actual": {},
+        "measurement_quality": "observed",
+        "eligible_for_knn": true,
+        "provenance": "guessed"
+      }
+    }
+  ]
+}

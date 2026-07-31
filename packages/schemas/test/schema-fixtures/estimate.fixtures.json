@@ -1,0 +1,101 @@
+{
+  "valid": [
+    {
+      "schema_version": "1.0",
+      "intent_id": "I-2026-07-31-example-feature",
+      "revisions": [
+        {
+          "revision_id": "r1",
+          "estimated_at": "2026-07-31T09:00:00+09:00",
+          "as_of_phase": "1_intent",
+          "repo_commit": "abc1234",
+          "estimator_version": "0.1.0",
+          "predictors": {
+            "files_touched_estimate": 5,
+            "files_touched_observed": null,
+            "layers_crossed": 1,
+            "risk_class": "low",
+            "spec_rule_count": null,
+            "novel_surface": "unknown"
+          },
+          "predicted": {
+            "tokens": { "p50": 100000, "p80": 180000 },
+            "cost_usd": { "p50": 2.5, "p80": 4.5 }
+          },
+          "neighbors": [],
+          "population_condition": {
+            "population_size": 3,
+            "method": "reference_table",
+            "experimental": true
+          }
+        }
+      ]
+    }
+  ],
+  "invalidStructural": [
+    {
+      "description": "revisions must have at least 1 item",
+      "input": { "schema_version": "1.0", "intent_id": "I-2026-07-31-example-feature", "revisions": [] }
+    },
+    {
+      "description": "as_of_phase has an enum value that does not exist in PHASE_ORDER",
+      "input": {
+        "schema_version": "1.0",
+        "intent_id": "I-2026-07-31-example-feature",
+        "revisions": [
+          {
+            "revision_id": "r1",
+            "estimated_at": "2026-07-31T09:00:00+09:00",
+            "as_of_phase": "0_backlog",
+            "repo_commit": "abc1234",
+            "estimator_version": "0.1.0",
+            "predictors": {
+              "files_touched_estimate": 5,
+              "files_touched_observed": null,
+              "layers_crossed": 1,
+              "risk_class": "low",
+              "spec_rule_count": null,
+              "novel_surface": "unknown"
+            },
+            "predicted": {
+              "tokens": { "p50": 100000, "p80": 180000 },
+              "cost_usd": { "p50": 2.5, "p80": 4.5 }
+            },
+            "neighbors": [],
+            "population_condition": { "population_size": 3, "method": "reference_table", "experimental": true }
+          }
+        ]
+      }
+    },
+    {
+      "description": "predictors.risk_class has an enum value that does not exist",
+      "input": {
+        "schema_version": "1.0",
+        "intent_id": "I-2026-07-31-example-feature",
+        "revisions": [
+          {
+            "revision_id": "r1",
+            "estimated_at": "2026-07-31T09:00:00+09:00",
+            "as_of_phase": "1_intent",
+            "repo_commit": "abc1234",
+            "estimator_version": "0.1.0",
+            "predictors": {
+              "files_touched_estimate": 5,
+              "files_touched_observed": null,
+              "layers_crossed": 1,
+              "risk_class": "critical",
+              "spec_rule_count": null,
+              "novel_surface": "unknown"
+            },
+            "predicted": {
+              "tokens": { "p50": 100000, "p80": 180000 },
+              "cost_usd": { "p50": 2.5, "p80": 4.5 }
+            },
+            "neighbors": [],
+            "population_condition": { "population_size": 3, "method": "reference_table", "experimental": true }
+          }
+        ]
+      }
+    }
+  ]
+}

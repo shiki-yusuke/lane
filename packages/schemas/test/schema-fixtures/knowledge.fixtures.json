@@ -1,0 +1,81 @@
+{
+  "valid": [
+    {
+      "schema_version": "1.0",
+      "id": "kn-0001",
+      "confidence": "high",
+      "status": "active",
+      "supersedes": null,
+      "paths": ["src/features/setup/index.ts"],
+      "path_prefixes": [],
+      "summary": "Setup flow re-entrancy is guarded by an in-flight ref.",
+      "tags": ["setup"],
+      "created_at": "2026-06-01T09:00:00+09:00",
+      "provenance": "lane",
+      "scope": "scoped",
+      "repo_id": "example/example",
+      "type": "review_decision",
+      "context": "Setup step navigation could double-fire on fast clicks.",
+      "rationale": "An in-flight ref prevents re-entrant navigation calls."
+    },
+    {
+      "schema_version": "1.0",
+      "id": "kn-0002",
+      "confidence": "medium",
+      "status": "active",
+      "supersedes": null,
+      "paths": [],
+      "path_prefixes": [],
+      "summary": "Global note about test coverage floor.",
+      "tags": [],
+      "created_at": "2026-06-01T09:00:00+09:00",
+      "provenance": "lane",
+      "scope": "global",
+      "type": "review_finding",
+      "taxonomy": "test_missing",
+      "evidence": "No regression test for the double-click case.",
+      "resolution": "fixed"
+    }
+  ],
+  "invalidStructural": [
+    {
+      "description": "type has a value outside the review_finding|review_decision union",
+      "input": {
+        "schema_version": "1.0",
+        "id": "kn-0003",
+        "summary": "Not a real record type.",
+        "created_at": "2026-06-01T09:00:00+09:00",
+        "scope": "global",
+        "type": "review_note",
+        "context": "x",
+        "rationale": "x"
+      }
+    },
+    {
+      "description": "review_finding missing required field resolution",
+      "input": {
+        "schema_version": "1.0",
+        "id": "kn-0004",
+        "summary": "Missing resolution.",
+        "created_at": "2026-06-01T09:00:00+09:00",
+        "scope": "global",
+        "type": "review_finding",
+        "taxonomy": "test_missing",
+        "evidence": "x"
+      }
+    },
+    {
+      "description": "scope has a value outside the global|scoped union",
+      "input": {
+        "schema_version": "1.0",
+        "id": "kn-0005",
+        "summary": "Bad scope value.",
+        "created_at": "2026-06-01T09:00:00+09:00",
+        "scope": "org_wide",
+        "type": "review_decision",
+        "context": "x",
+        "rationale": "x"
+      }
+    }
+  ]
+}

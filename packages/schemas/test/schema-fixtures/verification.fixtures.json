@@ -1,0 +1,55 @@
+{
+  "valid": [
+    {
+      "schema_version": "1.0",
+      "intent_id": "I-2026-07-31-example-feature",
+      "test_matrix": [
+        {
+          "ears_rule": "Rule 1 (setup docs order)",
+          "test_type": "unit",
+          "test_file": "test/setup.test.ts",
+          "test_name": "shows steps in order",
+          "status": "added"
+        }
+      ],
+      "test_gaps": [],
+      "manual_verification": [],
+      "goal_stopping_condition": ["All rule-1 tests pass"],
+      "spec_consensus": {
+        "spec_ssot_ref": "docs/spec/I-2026-07-31-example-feature/spec.md",
+        "spec_digest": "aaaaaaaa",
+        "verification_digest": "bbbbbbbb",
+        "deviations": [],
+        "reviewer_ack": null
+      }
+    }
+  ],
+  "invalidStructural": [
+    {
+      "description": "test_matrix must have at least 1 item",
+      "input": {
+        "schema_version": "1.0",
+        "intent_id": "I-2026-07-31-example-feature",
+        "test_matrix": []
+      }
+    },
+    {
+      "description": "test_type has an enum value that does not exist",
+      "input": {
+        "schema_version": "1.0",
+        "intent_id": "I-2026-07-31-example-feature",
+        "test_matrix": [
+          { "ears_rule": "Rule 1", "test_type": "smoke", "status": "added" }
+        ]
+      }
+    },
+    {
+      "description": "missing required field status on a test_matrix entry",
+      "input": {
+        "schema_version": "1.0",
+        "intent_id": "I-2026-07-31-example-feature",
+        "test_matrix": [{ "ears_rule": "Rule 1", "test_type": "unit" }]
+      }
+    }
+  ]
+}

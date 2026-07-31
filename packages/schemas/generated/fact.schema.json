@@ -1,0 +1,72 @@
+{
+  "$ref": "#/definitions/fact",
+  "definitions": {
+    "fact": {
+      "type": "object",
+      "properties": {
+        "occurred_at_utc": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "agent": {
+          "type": "string",
+          "enum": [
+            "claude",
+            "codex"
+          ]
+        },
+        "session_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "model_key": {
+          "type": "string"
+        },
+        "token_kind": {
+          "type": "string",
+          "enum": [
+            "input_nocache",
+            "cache_read",
+            "cache_write_5m",
+            "cache_write_1h",
+            "cache_write_unknown",
+            "output"
+          ]
+        },
+        "tokens": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "fast",
+            "normal",
+            "unknown"
+          ],
+          "default": "unknown"
+        },
+        "source_quality": {
+          "type": "string",
+          "enum": [
+            "ok",
+            "first_event_delta"
+          ],
+          "default": "ok"
+        }
+      },
+      "required": [
+        "occurred_at_utc",
+        "agent",
+        "session_id",
+        "model_key",
+        "token_kind",
+        "tokens"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

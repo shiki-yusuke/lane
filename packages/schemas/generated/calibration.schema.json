@@ -1,0 +1,323 @@
+{
+  "$ref": "#/definitions/calibration",
+  "definitions": {
+    "calibration": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "schema_version": {
+              "type": "string"
+            },
+            "record_id": {
+              "type": "string"
+            },
+            "kind": {
+              "type": "string",
+              "const": "observation"
+            },
+            "intent_id": {
+              "type": "string"
+            },
+            "recorded_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "predictors": {
+              "type": "object",
+              "properties": {
+                "files_touched_estimate": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "files_touched_observed": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "layers_crossed": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "risk_class": {
+                  "type": "string",
+                  "enum": [
+                    "low",
+                    "medium",
+                    "high"
+                  ]
+                },
+                "spec_rule_count": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "novel_surface": {
+                  "type": "string",
+                  "enum": [
+                    "true",
+                    "false",
+                    "unknown"
+                  ]
+                }
+              },
+              "required": [
+                "files_touched_estimate",
+                "files_touched_observed",
+                "layers_crossed",
+                "risk_class",
+                "spec_rule_count",
+                "novel_surface"
+              ],
+              "additionalProperties": false
+            },
+            "predictor_quality": {
+              "type": "string",
+              "enum": [
+                "observed",
+                "reconstructed",
+                "imputed"
+              ]
+            },
+            "actual": {
+              "type": "object",
+              "properties": {
+                "tokens": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "cycle_time_min": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "estimated_cost_usd": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "credits": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "pricing_catalog_version": {
+                  "type": "string"
+                },
+                "pricing_status": {
+                  "type": "string",
+                  "enum": [
+                    "priced",
+                    "unpriced",
+                    "stale"
+                  ]
+                }
+              },
+              "additionalProperties": false,
+              "description": "Missing metrics are omitted, never represented as 0."
+            },
+            "measurement_quality": {
+              "type": "string",
+              "enum": [
+                "observed",
+                "reconstructed",
+                "imputed"
+              ]
+            },
+            "eligible_for_knn": {
+              "type": "boolean"
+            },
+            "provenance": {
+              "type": "string",
+              "enum": [
+                "measured",
+                "imported_legacy_ledger"
+              ]
+            }
+          },
+          "required": [
+            "schema_version",
+            "record_id",
+            "kind",
+            "intent_id",
+            "recorded_at",
+            "predictors",
+            "predictor_quality",
+            "actual",
+            "measurement_quality",
+            "eligible_for_knn",
+            "provenance"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "schema_version": {
+              "type": "string"
+            },
+            "record_id": {
+              "type": "string"
+            },
+            "kind": {
+              "type": "string",
+              "const": "prediction_evaluation"
+            },
+            "intent_id": {
+              "type": "string"
+            },
+            "estimate_revision_id": {
+              "type": "string"
+            },
+            "evaluated_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "predicted": {
+              "type": "object",
+              "properties": {
+                "tokens": {
+                  "type": "object",
+                  "properties": {
+                    "p50": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "p80": {
+                      "type": "number",
+                      "minimum": 0
+                    }
+                  },
+                  "required": [
+                    "p50",
+                    "p80"
+                  ],
+                  "additionalProperties": false
+                },
+                "cycle_time_min": {
+                  "type": "object",
+                  "properties": {
+                    "p50": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "p80": {
+                      "type": "number",
+                      "minimum": 0
+                    }
+                  },
+                  "required": [
+                    "p50",
+                    "p80"
+                  ],
+                  "additionalProperties": false
+                },
+                "cost_usd": {
+                  "type": "object",
+                  "properties": {
+                    "p50": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "p80": {
+                      "type": "number",
+                      "minimum": 0
+                    }
+                  },
+                  "required": [
+                    "p50",
+                    "p80"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "tokens",
+                "cost_usd"
+              ],
+              "additionalProperties": false
+            },
+            "actual_record_id": {
+              "type": "string",
+              "description": "record_id of the corresponding observation record."
+            },
+            "error": {
+              "type": "object",
+              "properties": {
+                "tokens": {
+                  "type": "object",
+                  "properties": {
+                    "relative_error_p50": {
+                      "type": "number"
+                    },
+                    "covered_by_p80": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "relative_error_p50",
+                    "covered_by_p80"
+                  ],
+                  "additionalProperties": false
+                },
+                "cost_usd": {
+                  "type": "object",
+                  "properties": {
+                    "relative_error_p50": {
+                      "type": "number"
+                    },
+                    "covered_by_p80": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "relative_error_p50",
+                    "covered_by_p80"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "schema_version",
+            "record_id",
+            "kind",
+            "intent_id",
+            "estimate_revision_id",
+            "evaluated_at",
+            "predicted",
+            "actual_record_id",
+            "error"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

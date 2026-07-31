@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install pnpm
+        run: corepack enable
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Differential tests (packages/core/test/differential) call a private Python
+      # reference implementation this repo was ported from (design.md §9 checkpoint 3 /
+      # §10) via subprocess. That package isn't published anywhere CI (or a fresh clone)
+      # can install it from, so these tests self-skip when it isn't importable
+      # (python-harness.ts's isPythonReferenceAvailable()) rather than requiring CI setup
+      # for it. A maintainer with local access to the reference implementation can still
+      # run them by pointing LANE_DIFFERENTIAL_PYTHON_BIN at an interpreter that has it
+      # installed.
+
+      - name: Lint (Biome)
+        run: pnpm run lint
+
+      - name: Typecheck (src + test, all packages)
+        run: pnpm -r run typecheck
+
+      - name: Build (project references)
+        run: pnpm exec tsc -b tsconfig.json
+
+      - name: Regenerate JSON Schema and diff against committed output
+        run: |
+          pnpm --filter @lane/schemas run generate:json-schema
+          git diff --exit-code -- packages/schemas/generated || {
+            echo "::error::generated/*.schema.json is out of date. Run 'pnpm --filter @lane/schemas run generate:json-schema' and commit the result.";
+            exit 1;
+          }
+
+      - name: Dependency direction / cycle check (dependency-cruiser)
+        run: pnpm exec dependency-cruiser --config .dependency-cruiser.cjs packages/schemas/src packages/core/src packages/adapters/src packages/cli/src
+
+      - name: Test (all packages)
+        run: pnpm -r run test

@@ -1,0 +1,195 @@
+{
+  "$ref": "#/definitions/profile",
+  "definitions": {
+    "profile": {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "type": "string"
+        },
+        "profile_id": {
+          "type": "string"
+        },
+        "applies_to_repo": {
+          "type": "string",
+          "default": ""
+        },
+        "existing_ssot": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "default": {}
+        },
+        "extra_lenses": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        },
+        "layer_ownership": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "default": {}
+        },
+        "risk_auto_upgrade": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "when": {
+                "type": "object",
+                "properties": {
+                  "layers": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "paths": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "additionalProperties": false,
+                "default": {}
+              },
+              "upgrade_to": {
+                "type": "string",
+                "enum": [
+                  "low",
+                  "medium",
+                  "high"
+                ]
+              },
+              "reason": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "upgrade_to",
+              "reason"
+            ],
+            "additionalProperties": false
+          },
+          "default": []
+        },
+        "required_commands": {
+          "type": "object",
+          "properties": {
+            "pre_implement": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": []
+            },
+            "during_implement": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": []
+            },
+            "pre_pr": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": []
+            },
+            "post_implement": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": []
+            }
+          },
+          "additionalProperties": false,
+          "default": {}
+        },
+        "forbidden_paths_for_low_risk": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        },
+        "isomorphism_rules": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": true
+            },
+            "description": {
+              "type": "string"
+            },
+            "enforced_in": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": []
+            }
+          },
+          "additionalProperties": false,
+          "default": {}
+        },
+        "test_coverage_floor": {
+          "type": "object",
+          "properties": {
+            "unit_test_per_ears_rule_minimum": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 1
+            }
+          },
+          "additionalProperties": false,
+          "default": {}
+        },
+        "distance_caps": {
+          "type": "object",
+          "properties": {
+            "files_touched_estimate": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "default": 50
+            },
+            "layers_crossed": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "default": 10
+            },
+            "spec_rule_count": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "default": 30
+            }
+          },
+          "additionalProperties": false,
+          "default": {}
+        }
+      },
+      "required": [
+        "schema_version",
+        "profile_id"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}
