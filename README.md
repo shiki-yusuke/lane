@@ -8,7 +8,7 @@ knowledge-DB lens for review lessons.
 
 This is a from-scratch TypeScript rewrite of a private Python tool the author built and
 used personally; the source project has no public existence, so this repo stands on its
-own. Not published to a package registry yet — install from a clone (see below).
+own.
 
 ## Install
 
