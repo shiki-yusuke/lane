@@ -33,11 +33,11 @@ jobs:
       - name: Lint (Biome)
         run: pnpm run lint
 
-      - name: Typecheck (src + test, all packages)
-        run: pnpm -r run typecheck
-
       - name: Build (project references)
         run: pnpm exec tsc -b tsconfig.json
+
+      - name: Typecheck (src + test, all packages)
+        run: pnpm -r run typecheck
 
       - name: Regenerate JSON Schema and diff against committed output
         run: |
