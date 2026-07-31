@@ -1003,6 +1003,22 @@ lane/
 - 依存方向チェック: CI で `dependency-cruiser` を必須実行し、§2.1 の依存方向逆流と package cycle を検出する（§9 checkpoint 4 の合否基準）。
 - Node は `engines.node >= 22`、`type: "module"` で統一（evigate 慣行）。
 
+**npm 公開パッケージ `spec-lane`（Track G 最終工程、2026-07-31）**: 公開するのは単一パッケージ
+`spec-lane` のみで、`@lane/*` 4パッケージの workspace 構成自体は開発用としてそのまま維持する。
+`publish/spec-lane/`（このモノレポの外、`pnpm-workspace.yaml` の対象外）に公開用
+`package.json`（name=spec-lane, repository=github.com/shiki-yusuke/lane, engines.node>=22）だけを
+手書きで置き、`scripts/build-publish.mjs`（`pnpm run build:publish`）が `packages/cli/dist/main.js`
+を esbuild で単一ファイルへ bundle して `publish/spec-lane/dist/main.js` を生成する。bundle は
+`@lane/schemas`/`core`/`adapters`/自身のソースを inline し、`workspace:*` 依存を実行時に持たない一方、
+`commander`/`yaml`/`zod` の3つは external のまま維持し公開 package.json の通常の `dependencies` として
+宣言する（esbuild の ESM 出力では、bundle 対象の CJS パッケージ内部の `require("node:...")` を静的
+import に変換できず `Dynamic require of "node:events" is not supported` で実行時に落ちる制約が
+あるため。CJS 出力に切り替えると今度は `import.meta.url`（`default-profile.ts` が bundle 同梱の
+`resources/profiles/generic.profile.yaml` を探すのに使用）が `undefined` になる。両方の制約を
+同時に満たす組み合わせが「ESM 出力 + node:builtin と3つの npm 依存だけを external 指定」だった）。
+`publish/spec-lane/dist|resources|README.md|LICENSE` は生成物なので commit 対象外
+（`.gitignore` 参照）、`package.json` のみ手書きで commit する。
+
 ---
 
 ## 7. マイグレーション考慮とデータ配置

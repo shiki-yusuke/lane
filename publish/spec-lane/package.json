@@ -1,0 +1,38 @@
+{
+  "name": "spec-lane",
+  "version": "0.1.0",
+  "description": "A local-first delivery-lane orchestrator: Intent -> Spec/Critic -> Implement -> Verify -> Done, with cost estimation/calibration, a resource-aware next-task view, a spec-consensus gate, and a knowledge lens for review lessons.",
+  "type": "module",
+  "license": "MIT",
+  "author": "shiki-yusuke",
+  "homepage": "https://github.com/shiki-yusuke/lane#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shiki-yusuke/lane.git"
+  },
+  "bugs": {
+    "url": "https://github.com/shiki-yusuke/lane/issues"
+  },
+  "keywords": [
+    "cli",
+    "delivery",
+    "spec-driven-development",
+    "workflow",
+    "ai-agent",
+    "developer-tools",
+    "estimation",
+    "code-review"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "bin": {
+    "lane": "./dist/main.js"
+  },
+  "files": ["dist", "resources", "README.md", "LICENSE"],
+  "dependencies": {
+    "commander": "^13.1.0",
+    "yaml": "^2.9.0",
+    "zod": "^3.25.76"
+  }
+}

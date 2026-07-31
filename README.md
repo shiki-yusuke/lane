@@ -12,11 +12,24 @@ own. Not published to a package registry yet — install from a clone (see below
 
 ## Install
 
-Requires Node.js >= 22 and [pnpm](https://pnpm.io/) (`corepack enable` gets you `pnpm` on a
-recent Node without a separate install).
+Requires Node.js >= 22.
 
 ```bash
-git clone <this-repo-url> lane
+npm install -g spec-lane
+lane --version
+```
+
+### From source (for contributing to `lane` itself)
+
+Requires [pnpm](https://pnpm.io/) too (`corepack enable` gets you `pnpm` on a recent Node
+without a separate install). This checkout is a pnpm workspace of four `@lane/*` packages
+(`schemas`/`core`/`adapters`/`cli`) that `pnpm -r run build` compiles independently — the
+published `spec-lane` package above is instead a single self-contained bundle produced by
+`node scripts/build-publish.mjs` from that same source (see that script's header comment for
+why); you don't need to know about the bundle step to work on `lane` day to day.
+
+```bash
+git clone https://github.com/shiki-yusuke/lane.git
 cd lane
 pnpm install
 pnpm -r run build
@@ -183,5 +196,4 @@ on it.
 
 ## License
 
-Not yet decided — private development pending a legal review before any public release
-decision.
+[MIT](LICENSE)

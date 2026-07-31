@@ -12,12 +12,14 @@
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "depcheck": "dependency-cruiser --config .dependency-cruiser.cjs --validate packages/*/src",
-    "generate:json-schema": "pnpm --filter @lane/schemas run generate:json-schema"
+    "generate:json-schema": "pnpm --filter @lane/schemas run generate:json-schema",
+    "build:publish": "pnpm run build && node scripts/build-publish.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
     "@types/node": "^22.10.2",
     "dependency-cruiser": "^16.9.0",
+    "esbuild": "0.28.1",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"
   }
