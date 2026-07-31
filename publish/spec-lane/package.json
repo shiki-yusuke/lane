@@ -27,9 +27,14 @@
     "node": ">=22"
   },
   "bin": {
-    "lane": "./dist/main.js"
+    "lane": "dist/main.js"
   },
-  "files": ["dist", "resources", "README.md", "LICENSE"],
+  "files": [
+    "dist",
+    "resources",
+    "README.md",
+    "LICENSE"
+  ],
   "dependencies": {
     "commander": "^13.1.0",
     "yaml": "^2.9.0",
