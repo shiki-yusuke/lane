@@ -238,6 +238,34 @@ describe("runConsensus", () => {
     expect(readVerificationIfExists(specDir, intentId)?.spec_consensus?.reviewer_ack).toBeNull();
   });
 
+  it("gate-port review P0: re-running --refresh after success_criteria_matrix changes drops a previously recorded ack (integration)", () => {
+    // canonicalVerificationContent() (core/application/consensus-service.ts) must include
+    // success_criteria_matrix/cross_check_intent_vs_spec, or editing them after an ack
+    // would leave the ack looking valid (same verification_digest) while the coverage
+    // claims it vouches for had silently changed underneath it.
+    runConsensus(intentId, { specDir, refresh: true, specSsotRef: "x" });
+    runConsensus(intentId, { specDir, ack: { reviewerKind: "human", reviewerId: "r1" } });
+    const acked = readVerificationIfExists(specDir, intentId);
+    expect(acked?.spec_consensus?.reviewer_ack).not.toBeNull();
+    const ackedVerificationDigest = acked?.spec_consensus?.verification_digest;
+
+    writeVerification(specDir, intentId, {
+      ...(acked as Verification),
+      success_criteria_matrix: [
+        {
+          criterion: "A condition added after the ack.",
+          covered_by: "test",
+          evidence: "test.ts::x",
+        },
+      ],
+    });
+    runConsensus(intentId, { specDir, refresh: true });
+
+    const afterMatrixEdit = readVerificationIfExists(specDir, intentId);
+    expect(afterMatrixEdit?.spec_consensus?.verification_digest).not.toBe(ackedVerificationDigest);
+    expect(afterMatrixEdit?.spec_consensus?.reviewer_ack).toBeNull();
+  });
+
   it("--emit-pr-section prints deviations and ack status without writing anything", () => {
     runConsensus(intentId, { specDir, refresh: true, specSsotRef: "x" });
     runConsensus(intentId, {

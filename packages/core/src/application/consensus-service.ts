@@ -16,6 +16,12 @@ export { computeDigest };
  * would never reproduce the digest that was written into it. Field order is fixed
  * explicitly (not "whatever order the object was built in") so the digest is stable
  * regardless of how the caller assembled the Verification object.
+ *
+ * Gate-port review (2026-08-06, P0): success_criteria_matrix/cross_check_intent_vs_spec
+ * are included here too — without this, editing the matrix after a reviewer_ack was
+ * recorded would leave the ack looking valid (digest unchanged) even though the actual
+ * coverage claims it's vouching for had changed underneath it, defeating the entire point
+ * of binding the ack to content by hash.
  */
 export function canonicalVerificationContent(verification: Verification): string {
   return JSON.stringify({
@@ -26,6 +32,8 @@ export function canonicalVerificationContent(verification: Verification): string
     test_gaps: verification.test_gaps,
     manual_verification: verification.manual_verification,
     goal_stopping_condition: verification.goal_stopping_condition,
+    success_criteria_matrix: verification.success_criteria_matrix ?? null,
+    cross_check_intent_vs_spec: verification.cross_check_intent_vs_spec ?? null,
   });
 }
 
