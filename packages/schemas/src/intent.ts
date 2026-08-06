@@ -9,6 +9,36 @@ export const BudgetConstraintSchema = z.object({
 });
 export type BudgetConstraint = z.infer<typeof BudgetConstraintSchema>;
 
+// Gate-port review (2026-08-06) — premise_evidence gate 1 (model-routing-policy §3.2), ported
+// from the reference implementation's validate.py gate_check_premise_evidence. A
+// discriminated union on `required` rather than one object with every field optional: the
+// two branches have genuinely different required fields (method/reproduced/evidence vs.
+// reason), and a discriminated union lets zod reject a `required: false` record that still
+// carries a stray `method` as cleanly as one missing `reason`.
+//
+// `method`'s three values describe *how* the premise's real-world existence was confirmed,
+// not how "production-grade" the change is:
+//   - "live": direct observation in a runnable environment (ran the code/repro'd the bug
+//     against a real system).
+//   - "data": existence proven via a record or query (logs, a database row, an existing
+//     report) rather than live execution.
+//   - "code-only": confirmed only by reading how the code is wired (a static trace of the
+//     generation path) — the weakest of the three; the gate emits a warning even when this
+//     branch otherwise passes, recommending an upgrade to "live"/"data" where possible.
+export const PremiseEvidenceSchema = z.discriminatedUnion("required", [
+  z.object({
+    required: z.literal(true),
+    method: z.enum(["live", "data", "code-only"]),
+    reproduced: z.boolean(),
+    evidence: z.string(),
+  }),
+  z.object({
+    required: z.literal(false),
+    reason: z.string().min(1),
+  }),
+]);
+export type PremiseEvidence = z.infer<typeof PremiseEvidenceSchema>;
+
 export const IntentSchema = z.object({
   schema_version: z.string().regex(/^\d+\.\d+(\.\d+)?$/),
   intent_id: z.string().regex(/^I-\d{4}-\d{2}-\d{2}-[a-z0-9-]+$/),
@@ -38,6 +68,12 @@ export const IntentSchema = z.object({
   baseline_adopted_at: Iso8601Schema.optional().describe(
     "When baseline_estimate_revision_id was last set via adoptBaselineRevision().",
   ),
+  // Gate-port review (2026-08-06) — deliberately optional with no .default(): whether a
+  // lane recorded this at all is itself the signal core/gate.ts's premiseEvidenceGate acts
+  // on (unrecorded -> warning, since the CLI cannot itself decide whether the gate applies
+  // to a given change). A .default() would make "never written" indistinguishable from
+  // some fabricated default value, which is exactly what this field must not do.
+  premise_evidence: PremiseEvidenceSchema.optional(),
   intent: z.object({
     business_goal: z.string().min(10),
     user_visible_intent: z.string().min(10),

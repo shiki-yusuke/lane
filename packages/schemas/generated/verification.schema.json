@@ -239,6 +239,59 @@
             "verification_digest"
           ],
           "additionalProperties": false
+        },
+        "success_criteria_matrix": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "criterion": {
+                "type": "string",
+                "minLength": 1
+              },
+              "covered_by": {
+                "type": "string",
+                "enum": [
+                  "test",
+                  "diff",
+                  "manual",
+                  "none"
+                ]
+              },
+              "evidence": {
+                "type": "string",
+                "minLength": 1
+              },
+              "negation_test": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "criterion",
+              "covered_by",
+              "evidence"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1
+        },
+        "cross_check_intent_vs_spec": {
+          "type": "object",
+          "properties": {
+            "performed_at": {
+              "type": "string",
+              "minLength": 1
+            },
+            "finding": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "performed_at",
+            "finding"
+          ],
+          "additionalProperties": false
         }
       },
       "required": [

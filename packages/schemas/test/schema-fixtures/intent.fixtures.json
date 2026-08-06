@@ -29,6 +29,48 @@
         "allowed_paths": ["docs/**"],
         "forbidden_paths": []
       }
+    },
+    {
+      "schema_version": "1.0",
+      "intent_id": "I-2026-07-31-example-feature",
+      "premise_evidence": {
+        "required": true,
+        "method": "live",
+        "reproduced": true,
+        "evidence": "Ran the failing scenario locally and confirmed the reported timeout with a captured stack trace."
+      },
+      "intent": {
+        "business_goal": "Reduce onboarding time by clarifying setup docs.",
+        "user_visible_intent": "New users see setup steps in order.",
+        "success": ["ok"],
+        "primary_user": "new_developer",
+        "declared_risk": "low"
+      },
+      "ai_inferred_scope": {
+        "affected_layers": ["docs"],
+        "confidence": "medium",
+        "allowed_paths": ["docs/**"]
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "intent_id": "I-2026-07-31-example-feature",
+      "premise_evidence": {
+        "required": false,
+        "reason": "User-reported issue with an already-observed symptom; no new guard/branch introduced."
+      },
+      "intent": {
+        "business_goal": "Reduce onboarding time by clarifying setup docs.",
+        "user_visible_intent": "New users see setup steps in order.",
+        "success": ["ok"],
+        "primary_user": "new_developer",
+        "declared_risk": "low"
+      },
+      "ai_inferred_scope": {
+        "affected_layers": ["docs"],
+        "confidence": "medium",
+        "allowed_paths": ["docs/**"]
+      }
     }
   ],
   "invalidStructural": [
@@ -95,6 +137,77 @@
         "schema_version": "1.0",
         "intent_id": "I-2026-07-31-example-feature",
         "budget": "unlimited",
+        "intent": {
+          "business_goal": "Reduce onboarding time by clarifying setup docs.",
+          "user_visible_intent": "New users see setup steps in order.",
+          "success": ["ok"],
+          "primary_user": "new_developer",
+          "declared_risk": "low"
+        },
+        "ai_inferred_scope": {
+          "affected_layers": ["docs"],
+          "confidence": "medium",
+          "allowed_paths": ["docs/**"]
+        }
+      }
+    },
+    {
+      "description": "premise_evidence.method has an enum value that does not exist (required:true branch)",
+      "input": {
+        "schema_version": "1.0",
+        "intent_id": "I-2026-07-31-example-feature",
+        "premise_evidence": {
+          "required": true,
+          "method": "hearsay",
+          "reproduced": true,
+          "evidence": "Ran the failing scenario locally and confirmed the reported timeout."
+        },
+        "intent": {
+          "business_goal": "Reduce onboarding time by clarifying setup docs.",
+          "user_visible_intent": "New users see setup steps in order.",
+          "success": ["ok"],
+          "primary_user": "new_developer",
+          "declared_risk": "low"
+        },
+        "ai_inferred_scope": {
+          "affected_layers": ["docs"],
+          "confidence": "medium",
+          "allowed_paths": ["docs/**"]
+        }
+      }
+    },
+    {
+      "description": "premise_evidence required:true branch is missing method (discriminated union negative case)",
+      "input": {
+        "schema_version": "1.0",
+        "intent_id": "I-2026-07-31-example-feature",
+        "premise_evidence": {
+          "required": true,
+          "reproduced": true,
+          "evidence": "Ran the failing scenario locally and confirmed the reported timeout."
+        },
+        "intent": {
+          "business_goal": "Reduce onboarding time by clarifying setup docs.",
+          "user_visible_intent": "New users see setup steps in order.",
+          "success": ["ok"],
+          "primary_user": "new_developer",
+          "declared_risk": "low"
+        },
+        "ai_inferred_scope": {
+          "affected_layers": ["docs"],
+          "confidence": "medium",
+          "allowed_paths": ["docs/**"]
+        }
+      }
+    },
+    {
+      "description": "premise_evidence required:false branch is missing reason (discriminated union negative case)",
+      "input": {
+        "schema_version": "1.0",
+        "intent_id": "I-2026-07-31-example-feature",
+        "premise_evidence": {
+          "required": false
+        },
         "intent": {
           "business_goal": "Reduce onboarding time by clarifying setup docs.",
           "user_visible_intent": "New users see setup steps in order.",

@@ -22,6 +22,30 @@
         "deviations": [],
         "reviewer_ack": null
       }
+    },
+    {
+      "schema_version": "1.0",
+      "intent_id": "I-2026-07-31-example-feature",
+      "test_matrix": [
+        { "ears_rule": "Rule 1", "test_type": "unit", "status": "added" }
+      ],
+      "success_criteria_matrix": [
+        {
+          "criterion": "New user completes setup within 5 minutes.",
+          "covered_by": "test",
+          "evidence": "test/setup.test.ts::completes setup within 5 minutes",
+          "negation_test": "test/setup.test.ts::fails to complete when a step is skipped"
+        },
+        {
+          "criterion": "An unrelated condition nobody has covered yet.",
+          "covered_by": "none",
+          "evidence": "n/a"
+        }
+      ],
+      "cross_check_intent_vs_spec": {
+        "performed_at": "2026-08-06 (Phase 4)",
+        "finding": "No stronger condition found in spec.md than what intent.success already states."
+      }
     }
   ],
   "invalidStructural": [
@@ -49,6 +73,35 @@
         "schema_version": "1.0",
         "intent_id": "I-2026-07-31-example-feature",
         "test_matrix": [{ "ears_rule": "Rule 1", "test_type": "unit" }]
+      }
+    },
+    {
+      "description": "success_criteria_matrix must have at least 1 item when present",
+      "input": {
+        "schema_version": "1.0",
+        "intent_id": "I-2026-07-31-example-feature",
+        "test_matrix": [{ "ears_rule": "Rule 1", "test_type": "unit", "status": "added" }],
+        "success_criteria_matrix": []
+      }
+    },
+    {
+      "description": "success_criteria_matrix[].covered_by has an enum value that does not exist",
+      "input": {
+        "schema_version": "1.0",
+        "intent_id": "I-2026-07-31-example-feature",
+        "test_matrix": [{ "ears_rule": "Rule 1", "test_type": "unit", "status": "added" }],
+        "success_criteria_matrix": [
+          { "criterion": "x", "covered_by": "mostly", "evidence": "n/a" }
+        ]
+      }
+    },
+    {
+      "description": "success_criteria_matrix[] missing required field evidence",
+      "input": {
+        "schema_version": "1.0",
+        "intent_id": "I-2026-07-31-example-feature",
+        "test_matrix": [{ "ears_rule": "Rule 1", "test_type": "unit", "status": "added" }],
+        "success_criteria_matrix": [{ "criterion": "x", "covered_by": "test" }]
       }
     }
   ]

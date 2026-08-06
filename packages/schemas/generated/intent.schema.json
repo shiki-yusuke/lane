@@ -78,6 +78,58 @@
           "format": "date-time",
           "description": "When baseline_estimate_revision_id was last set via adoptBaselineRevision()."
         },
+        "premise_evidence": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "required": {
+                  "type": "boolean",
+                  "const": true
+                },
+                "method": {
+                  "type": "string",
+                  "enum": [
+                    "live",
+                    "data",
+                    "code-only"
+                  ]
+                },
+                "reproduced": {
+                  "type": "boolean"
+                },
+                "evidence": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "required",
+                "method",
+                "reproduced",
+                "evidence"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "required": {
+                  "type": "boolean",
+                  "const": false
+                },
+                "reason": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "required",
+                "reason"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        },
         "intent": {
           "type": "object",
           "properties": {

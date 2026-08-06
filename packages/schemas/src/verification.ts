@@ -84,6 +84,31 @@ export const SpecConsensusSchema = z
   );
 export type SpecConsensus = z.infer<typeof SpecConsensusSchema>;
 
+// Gate-port review (2026-08-06) — success_criteria gate 2 (model-routing-policy §3.2),
+// ported from the reference implementation's validate.py gate_check_success_criteria.
+// `criterion` is expected to be intent.intent.success's line transcribed verbatim (core's
+// successCriteriaGate normalizes and cross-checks both are consistent, not this schema).
+// `covered_by` deliberately *includes* "none": rejecting it at the schema level would make
+// "I looked and found no coverage" indistinguishable from "I haven't written this row
+// yet" -- the gate is what turns covered_by:"none" into a hard error, so the difference
+// between a schema-level and a gate-level reject stays visible in the data itself.
+const SuccessCriteriaRowSchema = z.object({
+  criterion: z.string().min(1),
+  covered_by: z.enum(["test", "diff", "manual", "none"]),
+  evidence: z.string().min(1),
+  negation_test: z.string().optional(),
+});
+export type SuccessCriteriaRow = z.infer<typeof SuccessCriteriaRowSchema>;
+
+// Free-form (not Iso8601Schema): the reference implementation's own template records this
+// as e.g. "2026-08-06 (Phase 4)", a human-written date-plus-phase label, not a machine
+// timestamp.
+const CrossCheckIntentVsSpecSchema = z.object({
+  performed_at: z.string().min(1),
+  finding: z.string().min(1),
+});
+export type CrossCheckIntentVsSpec = z.infer<typeof CrossCheckIntentVsSpecSchema>;
+
 export const VerificationSchema = z.object({
   schema_version: z.string(),
   intent_id: z.string().regex(/^I-\d{4}-\d{2}-\d{2}-[a-z0-9-]+$/),
@@ -93,5 +118,11 @@ export const VerificationSchema = z.object({
   manual_verification: z.array(ManualVerificationSchema).default([]),
   goal_stopping_condition: z.array(z.string()).default([]),
   spec_consensus: SpecConsensusSchema.optional(),
+  // Optional, non-.default()'d for the same reason premise_evidence is (intent.ts):
+  // "never recorded" must stay distinguishable from "recorded as empty" so
+  // core/gate.ts's successCriteriaGate can warn rather than silently treat an absent
+  // matrix as satisfied.
+  success_criteria_matrix: z.array(SuccessCriteriaRowSchema).min(1).optional(),
+  cross_check_intent_vs_spec: CrossCheckIntentVsSpecSchema.optional(),
 });
 export type Verification = z.infer<typeof VerificationSchema>;

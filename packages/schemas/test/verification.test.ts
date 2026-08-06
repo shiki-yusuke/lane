@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DeviationSchema, SpecConsensusSchema } from "../src/verification.js";
+import { DeviationSchema, SpecConsensusSchema, VerificationSchema } from "../src/verification.js";
 
 describe("DeviationSchema refine invariants", () => {
   it("rejects status=resolved without rationale, even for action=accept", () => {
@@ -54,6 +54,59 @@ describe("SpecConsensusSchema refine invariants", () => {
         acked_at: "2026-07-31T09:00:00+09:00",
         spec_sha256: "aaaa",
         verification_sha256: "bbbb",
+      },
+    });
+    expect(result.success).toBe(true);
+  });
+});
+
+// Gate-port review (2026-08-06) — success_criteria_matrix/cross_check_intent_vs_spec are
+// new optional fields; core/gate.ts's successCriteriaGate is what turns covered_by:"none"
+// into a hard error, not this schema (see verification.ts's field-level comment for why).
+describe("VerificationSchema: success_criteria_matrix / cross_check_intent_vs_spec", () => {
+  const withMatrix = (matrix: unknown) => ({
+    schema_version: "1.0",
+    intent_id: "I-2026-07-31-example-feature",
+    test_matrix: [{ ears_rule: "Rule 1", test_type: "unit", status: "added" }],
+    success_criteria_matrix: matrix,
+  });
+
+  it("is entirely optional — a Verification with no success_criteria_matrix key at all is still valid", () => {
+    const result = VerificationSchema.safeParse({
+      schema_version: "1.0",
+      intent_id: "I-2026-07-31-example-feature",
+      test_matrix: [{ ears_rule: "Rule 1", test_type: "unit", status: "added" }],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts covered_by:'none' at the schema level (the gate is what fails it, not the schema)", () => {
+    const result = VerificationSchema.safeParse(
+      withMatrix([{ criterion: "x", covered_by: "none", evidence: "n/a" }]),
+    );
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts a row with negation_test omitted (optional; the gate warns, the schema does not reject)", () => {
+    const result = VerificationSchema.safeParse(
+      withMatrix([{ criterion: "x", covered_by: "test", evidence: "test.ts::x" }]),
+    );
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects an empty success_criteria_matrix array (min(1) when the key is present at all)", () => {
+    const result = VerificationSchema.safeParse(withMatrix([]));
+    expect(result.success).toBe(false);
+  });
+
+  it("accepts cross_check_intent_vs_spec as a free-form date-plus-phase label, not a strict ISO timestamp", () => {
+    const result = VerificationSchema.safeParse({
+      schema_version: "1.0",
+      intent_id: "I-2026-07-31-example-feature",
+      test_matrix: [{ ears_rule: "Rule 1", test_type: "unit", status: "added" }],
+      cross_check_intent_vs_spec: {
+        performed_at: "2026-08-06 (Phase 4)",
+        finding: "No stronger condition found in spec.md than intent.success already states.",
       },
     });
     expect(result.success).toBe(true);
