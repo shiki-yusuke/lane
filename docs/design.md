@@ -37,6 +37,8 @@
 
 **M4 実装ノート（2026-07-31、着手時点）**: 上記スイープを実施した。git 追跡ファイル全体で移植元プロジェクトの実名（および社内文脈を示す他の識別子）がゼロであることを確認済み。唯一の例外は `packages/core/test/differential/python_harness.py` の `from qureo_lane import orchestrator as o` の1行（と、それを補助するコメント1行）— これは private な参照実装パッケージを実際にインポートして呼び出す唯一の技術的手段であり、実名を使わずには機能しない。この harness は差分テスト（`packages/core/test/differential/`）専用の fixture であり、参照実装が存在しない環境（公開後の CI・新規 clone 等）では `isPythonReferenceAvailable()` により自動的に skip される（M4 item 3）。
 
+**Gate-port review 追記（2026-08-06）**: 同じ技術的例外を、normalize_criterion の移植に伴い2箇所へ拡張した。①`python_harness.py` に `from qureo_lane import validate as v`（既存の `orchestrator as o` importの隣）を追加、② maintainer 専用の golden fixture 生成スクリプト `packages/core/test/differential/generate-normalize-criterion-golden.py` の `from qureo_lane.validate import normalize_criterion`。後者は公開 CI では一切実行されない（golden fixture 自体は commit 済みの静的 JSON で、public CI が実際に読むのはそれだけ）。いずれも同じ「private な参照実装を実際に呼び出す以外に技術的手段が無い」という条件に該当する。
+
 ---
 
 ## 2. schemas 7本の定義
