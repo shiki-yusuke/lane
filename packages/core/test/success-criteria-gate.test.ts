@@ -242,6 +242,40 @@ describe("successCriteriaGate.evaluate", () => {
     expect(diagnostics.some((d) => d.code === "criterion_extra")).toBe(true);
   });
 
+  it("duplicate (post-normalization) intent.success lines matched by a single matrix row both count as covered — intentional set-membership parity with the reference implementation, not a bug", () => {
+    // The reference implementation's own gate_check_success_criteria builds `criteria` as
+    // a *set* of normalized matrix criteria and checks `normalize_criterion(s) not in
+    // criteria` for each intent.success line -- membership, not a per-line count. Two
+    // intent.success lines that normalize to the same text are therefore both considered
+    // covered by one matching matrix row, exactly like this. This test exists so that
+    // property is understood as a deliberate parity choice (Codex review, 2026-08-06) and
+    // isn't "fixed" into requiring a 1:1 row count without that being a deliberate,
+    // separately-discussed change to the ported semantics.
+    const diagnostics = successCriteriaGate.evaluate(
+      buildContext(
+        [
+          "New user completes setup within 5 minutes.",
+          "New user completes setup within 5 minutes.",
+        ],
+        buildVerification({
+          success_criteria_matrix: [
+            {
+              criterion: "New user completes setup within 5 minutes.",
+              covered_by: "test",
+              evidence: "test.ts::completes-setup",
+              negation_test: "test.ts::fails-without-setup",
+            },
+          ],
+          cross_check_intent_vs_spec: {
+            performed_at: "2026-08-06 (Phase 4)",
+            finding: "No differences.",
+          },
+        }),
+      ),
+    );
+    expect(diagnostics).toHaveLength(0);
+  });
+
   it("skips the bidirectional cross-check (warning only) when intent.intent.success is empty", () => {
     const diagnostics = successCriteriaGate.evaluate(
       buildContext(

@@ -2,6 +2,7 @@ import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { runAdvance } from "../src/commands/advance.js";
 import { runStart } from "../src/commands/start.js";
 import { runValidate } from "../src/commands/validate.js";
 import { criticPath } from "../src/critic-store.js";
@@ -111,5 +112,33 @@ describe("runValidate (critic.yaml)", () => {
       ].join("\n"),
     );
     expect(() => runValidate(intentId, { specDir })).toThrow();
+  });
+});
+
+// Codex review (2026-08-06, should): at 3_implement, `lane validate` evaluates
+// successCriteriaGate through *two* triggers (phase_advance{3_implement->4_verify} and
+// before_pr_publish{phase:3_implement}) -- both apply, so without dedupe the exact same
+// finding would appear twice in the output.
+describe("runValidate diagnostic dedupe", () => {
+  let specDir: string;
+  const intentId = "I-2026-08-06-validate-dedupe";
+
+  beforeEach(() => {
+    specDir = mkdtempSync(join(tmpdir(), "lane-validate-dedupe-"));
+    runStart(intentId, { specDir });
+    expect(runAdvance(intentId, "2_spec", { specDir }).exitCode).toBe(0);
+    expect(runAdvance(intentId, "3_implement", { specDir }).exitCode).toBe(0);
+  });
+
+  afterEach(() => {
+    // biome-ignore lint/performance/noDelete: process.env.X = undefined coerces to the string "undefined", not real deletion
+    delete process.env.LANE_DATA_DIR;
+  });
+
+  it("reports the success_criteria matrix-missing warning exactly once at 3_implement, not twice", () => {
+    const result = runValidate(intentId, { specDir });
+    expect(result.exitCode).toBe(0);
+    const occurrences = result.message.split("success_criteria_matrix is not recorded").length - 1;
+    expect(occurrences).toBe(1);
   });
 });

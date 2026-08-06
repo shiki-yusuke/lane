@@ -7,7 +7,7 @@ import {
 } from "@lane/core";
 import { readCriticIfExists } from "../critic-store.js";
 import { packageDefaultProfilePath } from "../default-profile.js";
-import { evaluateGatesForTrigger, formatDiagnostics } from "../gate-check.js";
+import { dedupeDiagnostics, evaluateGatesForTrigger, formatDiagnostics } from "../gate-check.js";
 import { intentExists, readIntent } from "../intent-store.js";
 import { resolveSpecDir } from "../spec-dir.js";
 import { laneStateExists, readLaneState, writeLaneState } from "../state-store.js";
@@ -35,6 +35,12 @@ export interface ValidateOptions {
  * always reachable regardless of phase). This replaces the old early return that skipped
  * gate evaluation entirely below 4_verify/5_done, which meant premise_evidence's own gate
  * was never reachable through validate at all.
+ *
+ * Codex review (2026-08-06, should): a gate whose appliesTo() matches both of those
+ * triggers (successCriteriaGate at 3_implement, since its appliesTo covers both the
+ * 3_implement->4_verify edge and every before_pr_publish phase) would otherwise report the
+ * same finding twice. The two calls' diagnostics are merged through dedupeDiagnostics()
+ * (gate-check.ts), which dedupes by (gateId, code, message) before formatting.
  *
  * Codex M4 review, must-2: critic.yaml has no CLI-side schema check of its own before this
  * fix, so a malformed one (wrong lens set, `applicable` missing finding/taxonomy, etc.)
@@ -80,7 +86,7 @@ export function runValidate(intentId: string, opts: ValidateOptions): CommandRes
     isForwardTransition(currentPhase, p),
   );
 
-  const diagnostics = [
+  const diagnostics = dedupeDiagnostics([
     ...(forwardTarget
       ? evaluateGatesForTrigger(specDir, intentId, state, intent, profile, {
           type: "phase_advance",
@@ -92,7 +98,7 @@ export function runValidate(intentId: string, opts: ValidateOptions): CommandRes
       type: "before_pr_publish",
       phase: currentPhase,
     }).diagnostics,
-  ];
+  ]);
   const { errors, warnings } = formatDiagnostics(diagnostics);
 
   if (errors.length > 0) {

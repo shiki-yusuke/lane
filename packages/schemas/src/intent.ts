@@ -13,8 +13,14 @@ export type BudgetConstraint = z.infer<typeof BudgetConstraintSchema>;
 // from the reference implementation's validate.py gate_check_premise_evidence. A
 // discriminated union on `required` rather than one object with every field optional: the
 // two branches have genuinely different required fields (method/reproduced/evidence vs.
-// reason), and a discriminated union lets zod reject a `required: false` record that still
-// carries a stray `method` as cleanly as one missing `reason`.
+// reason), so whichever branch `required`'s value selects gets its own required fields
+// enforced -- required:true without `method` is rejected, required:false without `reason`
+// is rejected. This is a plain (non-strict) zod object per branch, though, so a
+// required:false record that also happens to carry a stray `method`/`reproduced`/
+// `evidence` is *not* rejected -- those extra keys are silently ignored, the same as any
+// other unrecognized key on a non-strict zod object (see intent.test.ts's own test
+// documenting this). The discriminated union's job here is "enforce the right shape for
+// the branch actually chosen," not "detect cross-branch contamination."
 //
 // `method`'s three values describe *how* the premise's real-world existence was confirmed,
 // not how "production-grade" the change is:
