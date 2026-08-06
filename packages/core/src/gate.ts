@@ -68,7 +68,7 @@ const PREMISE_METHODS = ["live", "data", "code-only"] as const;
 const PREMISE_EVIDENCE_MIN_CODEPOINTS = 20;
 
 /**
- * Gate 1 (model-routing-policy §3.2, ported from the reference implementation's
+ * Gate 1 (design.md §3.9, ported from the reference implementation's
  * validate.py gate_check_premise_evidence). Applies at the 1_intent->2_spec transition
  * edge, where it is the last mechanical checkpoint before a spec gets drafted against an
  * unconfirmed premise.
@@ -116,7 +116,7 @@ export const premiseEvidenceGate: Gate = {
           "premise_evidence is not recorded. If this change is AI-originated or the symptom " +
             "was never directly observed, and it introduces a new guard/branch/completion " +
             "condition, confirm the premise against a real system or data before writing the " +
-            "spec (model-routing-policy §3.2 gate 1) and record it here.",
+            "spec (design.md §3.9 gate 1) and record it here.",
         ),
       ];
     }
@@ -182,7 +182,7 @@ export const premiseEvidenceGate: Gate = {
 };
 
 /**
- * Gate 2 (model-routing-policy §3.2, ported from the reference implementation's
+ * Gate 2 (design.md §3.9, ported from the reference implementation's
  * validate.py gate_check_success_criteria). Applies at the 3_implement->4_verify
  * transition edge and again at the standalone before_pr_publish checkpoint (a deliberate
  * double-check, not re-documented as "automatically catching PR publish" — see
@@ -225,7 +225,7 @@ export const successCriteriaGate: Gate = {
           "warning",
           "success_criteria_matrix is not recorded. Cross-check each line of intent.intent.success " +
             "against the final diff one at a time and record how it is covered, with a negation " +
-            "test, before publishing a PR (model-routing-policy §3.2 gate 2).",
+            "test, before publishing a PR (design.md §3.9 gate 2).",
         ),
       ];
     }

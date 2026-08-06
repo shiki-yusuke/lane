@@ -701,6 +701,22 @@ export function resolveProfilePath(opts: { explicit?: string; profileId?: string
 
 sol 裁定: `estimate`/`calibrate`/`next`/`knowledge`/`consensus` のロジックは CLI コマンドの中に直接書くのではなく、`core/application/*.ts` にユースケースとして置く。`packages/cli` はこれらを呼ぶ薄いラッパー（引数パース + 標準出力整形のみ）にする。理由: CLI 層に置くとテストが CLI 実行に縛られ、将来 CI/他ツールから呼びたくなった時に再利用できない。
 
+### 3.9 gate 基盤刷新 + premise_evidence / success_criteria ゲート移植（2026-08-06）
+
+§3.3 の `GateContext`/`GateResult` の当初スケッチ（rev2 執筆時点の設計案）は、その後の実装で以下の形に置き換わっている（history として §3.3 の元コードは残し、ここに現行実装を追記する）:
+
+- `GateResult`（`{pass:true} | {pass:false, reason}`、1 gate 1 verdict）を `Diagnostic { gateId, code, severity: "warning"|"error", message }[]` に変更。1 つの gate が複数の同時issueを蓄積できる（後述の success_criteria が典型）。`pass` は「error が0件」で判定し、warning は遷移を止めない。
+- `GateContext.{phase, targetPhase, event}` を discriminated union `GateTrigger = {type:"phase_advance", from, to} | {type:"before_pr_publish", phase}` に変更。
+- `evaluateGates` は最初の fail で短絡せず、適用された全 gate の診断を集約する。
+- `runAdvance`（CLI）は**全遷移**で「妥当性確認 → artifact 読込 → gate 評価 → state 更新」を行い、error があれば state を一切変更しない。`runValidate` は「4_verify 未満で早期 return」を撤廃し、現在フェーズからの forward 遷移辺 + 常設の `before_pr_publish` チェックポイントの両方を随時診断する（gate は unrecorded を warning とすることで、CLI 側が発動判定を代行しない設計を保つ）。
+
+実装は `packages/core/src/gate.ts`（`DEFAULT_GATES`）を正とする。以下の2ゲートは、実運用パイロット（10件計測・較正済み）の判定基準をそのまま移植したもので、**閾値・fail/warning の区分は一切変更していない**:
+
+- **premise_evidence ゲート**（適用: `1_intent`→`2_spec`）: 変更が (a) AI起点のチケットか症状未観測、かつ (b) 新しいガード・拒否・分岐・完了条件を導入する、のいずれかに該当するなら、実機（live）・記録/クエリ（data）・静的読解（code-only、最弱・warning 付き）のいずれかで前提の実在を確認し `intent.yaml` の `premise_evidence` に記録する。未記載は CLI が発動対象かどうか判定できないため warning（fail-closed の担保は skill 運用側）。`required:true` で `reproduced:false` は error（fail-closed: 発動対象と自己申告したのに確認が取れていない）。
+- **success_criteria ゲート**（適用: `3_implement`→`4_verify` と常設の before_pr_publish チェックポイントでの二重確認）: `intent.intent.success` の各行を `verification.yaml` の `success_criteria_matrix` と双方向で突合する。①方向（success にあるが criterion が無い）は error、②方向（criterion にあるが success に無い＝spec が intent より強い条件を採用）は warning。`covered_by: none` は error（schema 自体は受理する。schema と gate の責務分離）。`negation_test` 空欄は warning（恒真式の疑い）。突合は `normalizeCriterion`（markdown link・強調記号・全角含む空白のみ吸収、要約は不一致）による正規化後の**完全一致**で、類似度は導入しない。
+
+両ゲートの検査能力には共通の限界がある: 「記録されているか」「形が妥当か」だけを機械検査でき、記録内容が真実かどうかは判定できない。発動判定自体（この変更がゲートの対象か）も人間/skill 運用側の判断であり、CLI は代行しない。
+
 ---
 
 ## 4. adapter ports 3つと実装

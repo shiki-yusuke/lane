@@ -84,7 +84,7 @@ export const SpecConsensusSchema = z
   );
 export type SpecConsensus = z.infer<typeof SpecConsensusSchema>;
 
-// Gate-port review (2026-08-06) — success_criteria gate 2 (model-routing-policy §3.2),
+// Gate-port review (2026-08-06) — success_criteria gate 2 (design.md §3.9),
 // ported from the reference implementation's validate.py gate_check_success_criteria.
 // `criterion` is expected to be intent.intent.success's line transcribed verbatim (core's
 // successCriteriaGate normalizes and cross-checks both are consistent, not this schema).

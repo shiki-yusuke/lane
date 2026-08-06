@@ -9,7 +9,7 @@ export const BudgetConstraintSchema = z.object({
 });
 export type BudgetConstraint = z.infer<typeof BudgetConstraintSchema>;
 
-// Gate-port review (2026-08-06) — premise_evidence gate 1 (model-routing-policy §3.2), ported
+// Gate-port review (2026-08-06) — premise_evidence gate 1 (design.md §3.9), ported
 // from the reference implementation's validate.py gate_check_premise_evidence. A
 // discriminated union on `required` rather than one object with every field optional: the
 // two branches have genuinely different required fields (method/reproduced/evidence vs.
