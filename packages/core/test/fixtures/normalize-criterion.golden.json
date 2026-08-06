@@ -1,0 +1,58 @@
+[
+  {
+    "input": "hello world",
+    "output": "helloworld"
+  },
+  {
+    "input": "新しい ユーザー が セットアップ を完了する",
+    "output": "新しいユーザーがセットアップを完了する"
+  },
+  {
+    "input": "新しい　ユーザー　が　セットアップ　を完了する",
+    "output": "新しいユーザーがセットアップを完了する"
+  },
+  {
+    "input": "See [issue-123](https://example.com/123) for details",
+    "output": "Seeissue-123fordetails"
+  },
+  {
+    "input": "**bold** and *italic* and `code`",
+    "output": "boldanditalicandcode"
+  },
+  {
+    "input": "🎉 Done! 🎉",
+    "output": "🎉Done!🎉"
+  },
+  {
+    "input": "**[Rule 1](https://x.com/1)**: ユーザー　が `完了` する 🎉",
+    "output": "Rule1:ユーザーが完了する🎉"
+  },
+  {
+    "input": "",
+    "output": ""
+  },
+  {
+    "input": "   　  ",
+    "output": ""
+  },
+  {
+    "input": "alreadynormalized",
+    "output": "alreadynormalized"
+  },
+  {
+    "input": "[A](url1) and [B](url2)",
+    "output": "AandB"
+  },
+  {
+    "input": "text [not a link",
+    "output": "text[notalink"
+  },
+  {
+    "input": "New user completes setup within 5 minutes.",
+    "output": "Newusercompletessetupwithin5minutes."
+  },
+  {
+    "input": "\t\ttab\tand\nnewline\n",
+    "output": "tabandnewline"
+  }
+]

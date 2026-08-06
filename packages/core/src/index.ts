@@ -1,5 +1,6 @@
 export * from "./phase.js";
 export * from "./gate.js";
+export * from "./normalize-criterion.js";
 export * from "./ledger.js";
 export * from "./goodhart.js";
 export * from "./done-overlay.js";

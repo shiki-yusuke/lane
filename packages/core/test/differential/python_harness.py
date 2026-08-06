@@ -1,5 +1,5 @@
 """Differential test harness: calls the real, installed Python reference implementation
-package (v0.7.8) so packages/core's TS ports can be checked byte-for-byte against the
+package (v0.9.0) so packages/core's TS ports can be checked byte-for-byte against the
 Python implementation they were ported from (design.md §9 checkpoint 3 / §10).
 
 This is a private reference implementation this repo was ported from, not published
@@ -20,6 +20,7 @@ import sys
 # The one place in this codebase that must reference the actual private package name --
 # there is no way to test parity against it without importing it by its real name.
 from qureo_lane import orchestrator as o
+from qureo_lane import validate as v
 
 
 def _compute_ledger_entry_id(lane_id, phase, source, pricing_version):
@@ -58,6 +59,10 @@ def _derive_cost_credits(cost_usd, source):
     return o.derive_cost_credits(cost_usd, source)
 
 
+def _normalize_criterion(text):
+    return v.normalize_criterion(text)
+
+
 FUNCTIONS = {
     "compute_ledger_entry_id": _compute_ledger_entry_id,
     "derive_confidence": _derive_confidence,
@@ -68,6 +73,7 @@ FUNCTIONS = {
     "apply_done_overlay": _apply_done_overlay,
     "validate_no_personal_dimensions": _validate_no_personal_dimensions,
     "derive_cost_credits": _derive_cost_credits,
+    "normalize_criterion": _normalize_criterion,
 }
 
 
