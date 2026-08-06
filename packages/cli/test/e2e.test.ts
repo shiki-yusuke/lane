@@ -11,6 +11,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 
 // M4 (team review, 2026-07-31): the `lane` subprocess below inherited this process's real
 // environment with no override, so a successful run of the "unblocked once spec_consensus
@@ -256,5 +257,105 @@ describe("packed CLI installed into an empty project (e2e)", () => {
   it("start refuses to recreate an already-started lane", () => {
     const result = lane(["start", intentId], projectDir);
     expect(result.exitCode).toBe(2);
+  });
+});
+
+// Gate-port review (2026-08-06), item 6 required acceptance test 5: both newly-ported
+// gates (premise_evidence, success_criteria) actually fire through the packed, installed
+// CLI binary, not just the in-process command functions (packages/cli/test/
+// gate-port-acceptance.test.ts covers the same two gates in-process). Separate intent ids
+// and their own describe block so this doesn't interleave with the sequential flow above.
+describe("packed CLI: premise_evidence and success_criteria gates fire for real (e2e)", () => {
+  function intentPath(intentId: string): string {
+    return join(projectDir, "docs", "spec", intentId, "intent.yaml");
+  }
+  function verificationPath(intentId: string): string {
+    return join(projectDir, "docs", "spec", intentId, "verification.yaml");
+  }
+
+  it("premise_evidence required:true + reproduced:false blocks 1_intent -> 2_spec", () => {
+    const intentId = "I-2026-08-06-e2e-premise-evidence";
+    expect(lane(["start", intentId], projectDir).exitCode).toBe(0);
+
+    const intent = parseYaml(readFileSync(intentPath(intentId), "utf-8"));
+    intent.premise_evidence = {
+      required: true,
+      method: "live",
+      reproduced: false,
+      evidence: "Attempted to reproduce locally but could not observe the reported behavior.",
+    };
+    writeFileSync(intentPath(intentId), stringifyYaml(intent));
+
+    const result = lane(["advance", intentId, "--phase", "2_spec"], projectDir);
+    expect(result.exitCode).toBe(3);
+    expect(result.stderr).toMatch(/Gate failed/);
+    expect(result.stderr).toMatch(/premise_evidence/);
+
+    const status = lane(["status", intentId], projectDir);
+    expect(status.stdout).toContain("current_phase: 1_intent"); // blocked: never advanced
+  });
+
+  it("premise_evidence unrecorded is only a warning: the same lane advances once reproduced:true is recorded", () => {
+    const intentId = "I-2026-08-06-e2e-premise-evidence-2";
+    expect(lane(["start", intentId], projectDir).exitCode).toBe(0);
+
+    // Unrecorded case: advances anyway (warning, not error).
+    const withoutRecord = lane(["advance", intentId, "--phase", "2_spec"], projectDir);
+    expect(withoutRecord.exitCode, withoutRecord.stderr).toBe(0);
+    expect(withoutRecord.stdout).toMatch(/premise_evidence/);
+
+    const status = lane(["status", intentId], projectDir);
+    expect(status.stdout).toContain("current_phase: 2_spec");
+  });
+
+  it("success_criteria covered_by:none blocks 3_implement -> 4_verify, then a covered matrix unblocks it", () => {
+    const intentId = "I-2026-08-06-e2e-success-criteria";
+    expect(lane(["start", intentId], projectDir).exitCode).toBe(0);
+    for (const phase of ["2_spec", "3_implement"] as const) {
+      expect(lane(["advance", intentId, "--phase", phase], projectDir).exitCode).toBe(0);
+    }
+
+    const intent = parseYaml(readFileSync(intentPath(intentId), "utf-8"));
+    const successLine = intent.intent.success[0] as string;
+
+    writeFileSync(
+      verificationPath(intentId),
+      stringifyYaml({
+        schema_version: "1.0",
+        intent_id: intentId,
+        test_matrix: [{ ears_rule: "Rule 1", test_type: "unit", status: "added" }],
+        success_criteria_matrix: [{ criterion: successLine, covered_by: "none", evidence: "n/a" }],
+      }),
+    );
+    const blocked = lane(["advance", intentId, "--phase", "4_verify"], projectDir);
+    expect(blocked.exitCode).toBe(3);
+    expect(blocked.stderr).toMatch(/Gate failed/);
+    expect(blocked.stderr).toMatch(/covered_by=none/);
+
+    writeFileSync(
+      verificationPath(intentId),
+      stringifyYaml({
+        schema_version: "1.0",
+        intent_id: intentId,
+        test_matrix: [{ ears_rule: "Rule 1", test_type: "unit", status: "added" }],
+        success_criteria_matrix: [
+          {
+            criterion: successLine,
+            covered_by: "test",
+            evidence: "test.ts::covers-it",
+            negation_test: "test.ts::negative-case",
+          },
+        ],
+        cross_check_intent_vs_spec: {
+          performed_at: "2026-08-06 (Phase 4)",
+          finding: "No differences.",
+        },
+      }),
+    );
+    const unblocked = lane(["advance", intentId, "--phase", "4_verify"], projectDir);
+    expect(unblocked.exitCode, unblocked.stderr).toBe(0);
+
+    const status = lane(["status", intentId], projectDir);
+    expect(status.stdout).toContain("current_phase: 4_verify");
   });
 });
