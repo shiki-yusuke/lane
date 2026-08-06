@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { runAdvance } from "../src/commands/advance.js";
 import { runStart } from "../src/commands/start.js";
 import { readIntent, writeIntent } from "../src/intent-store.js";
-import { laneStatePath } from "../src/state-store.js";
+import { laneStatePath, readLaneState } from "../src/state-store.js";
 
 // Gate-port review (2026-08-06), item 6, required acceptance tests 1/2. These exercise
 // runAdvance directly (no subprocess) so they run fast in the normal test suite;
@@ -37,13 +37,21 @@ describe("gate-port acceptance: failed advance leaves lane-state.json byte-for-b
       },
     });
 
+    const effectiveRiskLogLengthBefore = readLaneState(specDir, intentId).effective_risk_log.length;
     const before = readFileSync(laneStatePath(specDir, intentId), "utf-8");
     const result = runAdvance(intentId, "2_spec", { specDir });
     const after = readFileSync(laneStatePath(specDir, intentId), "utf-8");
+    const effectiveRiskLogLengthAfter = readLaneState(specDir, intentId).effective_risk_log.length;
 
     expect(result.exitCode).toBe(3);
     expect(result.message).toContain("[premise_evidence]");
-    expect(after).toBe(before); // byte-for-byte: no effective-risk audit entry either
+    expect(after).toBe(before); // byte-for-byte
+    // Explicit on top of the byte comparison above (team-lead review, 2026-08-06): a
+    // gate-blocked advance must not even append an effective-risk audit entry -- design.md
+    // §3.9's documented intent is that a failed advance attempt leaves *zero* trace in
+    // lane-state, not "everything except the phase/status fields."
+    expect(effectiveRiskLogLengthAfter).toBe(effectiveRiskLogLengthBefore);
+    expect(effectiveRiskLogLengthBefore).toBe(0); // sanity: this lane never had a gate evaluated yet
   });
 });
 

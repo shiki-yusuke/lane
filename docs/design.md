@@ -719,6 +719,8 @@ sol 裁定: `estimate`/`calibrate`/`next`/`knowledge`/`consensus` のロジッ�
 
 両ゲートの検査能力には共通の限界がある: 「記録されているか」「形が妥当か」だけを機械検査でき、記録内容が真実かどうかは判定できない。発動判定自体（この変更がゲートの対象か）も人間/skill 運用側の判断であり、CLI は代行しない。
 
+**設計上の意図の明文化（sol 裁定確認、2026-08-06）**: 「error があれば state を一切変更しない」という単純化の結果、**gate-blocked な advance の失敗痕跡は lane-state 側に一切残らない**（effective_risk_log への audit entry 追記も含めて、何も書き込まれない）。これは意図的な設計判断であり、副作用ではない。失敗の記録自体は CLI の標準エラー出力（`Gate failed: ...`）だけが担う。将来、失敗した advance 試行そのものの監査ログが必要になった場合は、**lane-state.json への書き込みを復活させるのではなく**、append-only の側路ログ（例: `docs/spec/<intent-id>/advance-attempts.jsonl` のような別ファイル、または既存の usage_import_attempts と同種の別配列）として設計すること。lane-state 自体は「現在の正しい状態」を表すものであり、「試みて失敗した記録」を混在させない、という区別を保つ。
+
 ---
 
 ## 4. adapter ports 3つと実装
