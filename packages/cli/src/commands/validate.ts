@@ -1,7 +1,13 @@
-import { loadProfile, recordEffectiveRiskEvaluation, resolveProfilePath } from "@lane/core";
+import {
+  isForwardTransition,
+  loadProfile,
+  recordEffectiveRiskEvaluation,
+  resolveProfilePath,
+  validNextPhases,
+} from "@lane/core";
 import { readCriticIfExists } from "../critic-store.js";
 import { packageDefaultProfilePath } from "../default-profile.js";
-import { evaluateBeforePrPublishGates } from "../gate-check.js";
+import { evaluateGatesForTrigger, formatDiagnostics } from "../gate-check.js";
 import { intentExists, readIntent } from "../intent-store.js";
 import { resolveSpecDir } from "../spec-dir.js";
 import { laneStateExists, readLaneState, writeLaneState } from "../state-store.js";
@@ -12,21 +18,32 @@ export interface ValidateOptions {
   profile?: string;
 }
 
-const PR_PUBLISH_PHASES = new Set(["4_verify", "5_done"]);
-
 /**
- * design.md §3.3/§3.4/§10 — validates whatever artifacts exist for the lane so far, and
+ * design.md §3.3/§3.4/§10 — validates whatever artifacts exist for the lane so far.
  * (Codex M1 review, must-3) recomputes+records the profile-driven effective risk before
  * evaluating any gate, so risk_auto_upgrade rules actually affect the outcome instead of
  * being dead config. Exit codes follow the Python reference implementation's convention: 0=pass, 2=lane state
  * error, 3=gate failure.
+ *
+ * Gate-port review (2026-08-06): validate is the "diagnose anytime" checker — unlike
+ * advance, it never attempts a real transition, so there is no single trigger to check.
+ * It instead evaluates gates against *both* of the two triggers relevant to wherever the
+ * lane currently sits: the forward phase_advance edge from the current phase (so e.g.
+ * premise_evidence's 1_intent->2_spec gate is reachable from `lane validate` while still
+ * at 1_intent, before anyone has actually tried `lane advance`) and the standalone
+ * before_pr_publish checkpoint (so success_criteria/spec_consensus's "double check" is
+ * always reachable regardless of phase). This replaces the old early return that skipped
+ * gate evaluation entirely below 4_verify/5_done, which meant premise_evidence's own gate
+ * was never reachable through validate at all.
  *
  * Codex M4 review, must-2: critic.yaml has no CLI-side schema check of its own before this
  * fix, so a malformed one (wrong lens set, `applicable` missing finding/taxonomy, etc.)
  * could pass every gate undetected all the way to 5_done. It's checked here whenever it
  * exists (readCriticIfExists throws, same as readIntent above, if it's malformed) — never
  * required before it's actually written, matching intent.yaml/verification.yaml's own
- * "read-if-exists" convention.
+ * "read-if-exists" convention. (gate-check.ts's buildGateContext reads it again
+ * independently for gate evaluation itself; this call is only so the message below can
+ * say whether one was found.)
  */
 export function runValidate(intentId: string, opts: ValidateOptions): CommandResult {
   const specDir = resolveSpecDir({ override: opts.specDir });
@@ -50,31 +67,37 @@ export function runValidate(intentId: string, opts: ValidateOptions): CommandRes
   const critic = readCriticIfExists(specDir, intentId, profile); // throws if malformed
 
   // Every validate call is a gate-evaluation event for audit purposes, even for phases
-  // where no gate currently applies (design.md §3.4: recomputed "gate 毎に").
+  // where no gate currently applies (design.md §3.4: recomputed "gate 毎に"). Unlike
+  // advance, this is persisted unconditionally — validate never mutates current_phase, so
+  // there is no "failed attempt" state to keep clean; accumulating one audit entry per
+  // validate call is harmless and intentional.
   const now = new Date().toISOString();
-  state = recordEffectiveRiskEvaluation(state, intent, profile, "spec_consensus", now);
+  state = recordEffectiveRiskEvaluation(state, intent, profile, "validate", now);
   writeLaneState(specDir, intentId, state);
 
-  if (!PR_PUBLISH_PHASES.has(state.current_phase)) {
-    return {
-      exitCode: 0,
-      message: `intent.yaml is valid${critic ? " and critic.yaml is valid" : ""} (phase=${state.current_phase}; spec_consensus gate is not evaluated before 4_verify).`,
-    };
-  }
-
-  const result = evaluateBeforePrPublishGates(
-    specDir,
-    intentId,
-    state,
-    intent,
-    profile,
-    state.current_phase,
+  const currentPhase = state.current_phase;
+  const forwardTarget = validNextPhases(currentPhase).find((p) =>
+    isForwardTransition(currentPhase, p),
   );
-  if (!result.pass) {
-    return { exitCode: 3, message: `Gate failed: ${result.reason}` };
+
+  const diagnostics = [
+    ...(forwardTarget
+      ? evaluateGatesForTrigger(specDir, intentId, state, intent, profile, {
+          type: "phase_advance",
+          from: currentPhase,
+          to: forwardTarget,
+        }).diagnostics
+      : []),
+    ...evaluateGatesForTrigger(specDir, intentId, state, intent, profile, {
+      type: "before_pr_publish",
+      phase: currentPhase,
+    }).diagnostics,
+  ];
+  const { errors, warnings } = formatDiagnostics(diagnostics);
+
+  if (errors.length > 0) {
+    return { exitCode: 3, message: `Gate failed: ${errors.join("; ")}` };
   }
-  return {
-    exitCode: 0,
-    message: "intent.yaml and verification.yaml are valid; all applicable gates pass.",
-  };
+  const summary = `intent.yaml is valid${critic ? " and critic.yaml is valid" : ""} (phase=${currentPhase}).`;
+  return { exitCode: 0, message: [summary, ...warnings].join("\n") };
 }

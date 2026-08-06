@@ -168,7 +168,7 @@ export function runConsensus(intentId: string, opts: ConsensusOptions): CommandR
     // the new ack without ever checking whether spec.md/verification.yaml changed since
     // then. Re-verify against fresh disk content here with the exact same
     // computeDigest()/canonicalVerificationContent() calls the gate itself uses
-    // (gate-check.ts's evaluateBeforePrPublishGates), so a content edit made between
+    // (gate-check.ts's evaluateGatesForTrigger), so a content edit made between
     // --refresh and --ack is caught here instead of only surfacing later as a confusing
     // gate failure.
     const freshSpecDigest = computeDigest(readSpecMdIfExists(specDir, intentId) ?? "");

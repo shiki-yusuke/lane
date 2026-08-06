@@ -56,9 +56,7 @@ function buildVerification(specConsensus: Record<string, unknown> | undefined): 
 
 function buildContext(overrides: Partial<GateContext["artifacts"]>): GateContext {
   return {
-    phase: "4_verify",
-    targetPhase: "5_done",
-    event: "before_pr_publish",
+    trigger: { type: "before_pr_publish", phase: "4_verify" },
     state: buildState(),
     profile,
     artifacts: { intent, ...overrides },
@@ -67,12 +65,12 @@ function buildContext(overrides: Partial<GateContext["artifacts"]>): GateContext
 
 describe("specConsensusGate", () => {
   it("fails when spec_consensus is missing entirely", () => {
-    const result = specConsensusGate.evaluate(buildContext({}));
-    expect(result.pass).toBe(false);
+    const diagnostics = specConsensusGate.evaluate(buildContext({}));
+    expect(diagnostics.some((d) => d.severity === "error")).toBe(true);
   });
 
   it("fails when there is a pending deviation", () => {
-    const result = specConsensusGate.evaluate(
+    const diagnostics = specConsensusGate.evaluate(
       buildContext({
         verification: buildVerification({
           spec_ssot_ref: "docs/spec/x/spec.md",
@@ -83,12 +81,12 @@ describe("specConsensusGate", () => {
         }),
       }),
     );
-    expect(result.pass).toBe(false);
-    if (!result.pass) expect(result.reason).toMatch(/unresolved deviation/);
+    expect(diagnostics.some((d) => d.severity === "error")).toBe(true);
+    expect(diagnostics.map((d) => d.message).join(" ")).toMatch(/unresolved deviation/);
   });
 
   it("fails when the current spec/verification digest no longer matches the ack", () => {
-    const result = specConsensusGate.evaluate(
+    const diagnostics = specConsensusGate.evaluate(
       buildContext({
         verification: buildVerification({
           spec_ssot_ref: "docs/spec/x/spec.md",
@@ -106,12 +104,12 @@ describe("specConsensusGate", () => {
         specDigest: { spec: "changed-digest", verification: "bbbb" },
       }),
     );
-    expect(result.pass).toBe(false);
-    if (!result.pass) expect(result.reason).toMatch(/digest mismatch/);
+    expect(diagnostics.some((d) => d.severity === "error")).toBe(true);
+    expect(diagnostics.map((d) => d.message).join(" ")).toMatch(/digest mismatch/);
   });
 
   it("passes with no pending deviations and a valid ack", () => {
-    const result = specConsensusGate.evaluate(
+    const diagnostics = specConsensusGate.evaluate(
       buildContext({
         verification: buildVerification({
           spec_ssot_ref: "docs/spec/x/spec.md",
@@ -136,7 +134,7 @@ describe("specConsensusGate", () => {
         }),
       }),
     );
-    expect(result.pass).toBe(true);
+    expect(diagnostics.some((d) => d.severity === "error")).toBe(false);
   });
 
   it("requires override_reason for a self ack when effective risk is high", () => {
@@ -152,9 +150,7 @@ describe("specConsensusGate", () => {
       ],
     });
     const ctx: GateContext = {
-      phase: "4_verify",
-      targetPhase: "5_done",
-      event: "before_pr_publish",
+      trigger: { type: "before_pr_publish", phase: "4_verify" },
       state,
       profile,
       artifacts: {
@@ -174,8 +170,48 @@ describe("specConsensusGate", () => {
         }),
       },
     };
-    const result = specConsensusGate.evaluate(ctx);
-    expect(result.pass).toBe(false);
+    const diagnostics = specConsensusGate.evaluate(ctx);
+    expect(diagnostics.some((d) => d.severity === "error")).toBe(true);
+  });
+
+  it("appliesTo matches before_pr_publish only once the lane is near publish (4_verify/5_done), plus phase_advance{to:5_done}", () => {
+    const base = buildContext({});
+    expect(
+      specConsensusGate.appliesTo({
+        ...base,
+        trigger: { type: "before_pr_publish", phase: "1_intent" },
+      }),
+    ).toBe(false);
+    expect(
+      specConsensusGate.appliesTo({
+        ...base,
+        trigger: { type: "before_pr_publish", phase: "3_implement" },
+      }),
+    ).toBe(false);
+    expect(
+      specConsensusGate.appliesTo({
+        ...base,
+        trigger: { type: "before_pr_publish", phase: "4_verify" },
+      }),
+    ).toBe(true);
+    expect(
+      specConsensusGate.appliesTo({
+        ...base,
+        trigger: { type: "before_pr_publish", phase: "5_done" },
+      }),
+    ).toBe(true);
+    expect(
+      specConsensusGate.appliesTo({
+        ...base,
+        trigger: { type: "phase_advance", from: "4_verify", to: "5_done" },
+      }),
+    ).toBe(true);
+    expect(
+      specConsensusGate.appliesTo({
+        ...base,
+        trigger: { type: "phase_advance", from: "3_implement", to: "4_verify" },
+      }),
+    ).toBe(false);
   });
 
   it("a profile's risk_auto_upgrade rule actually changes the gate outcome, end to end (Codex M1 review, must-3)", () => {
@@ -229,14 +265,12 @@ describe("specConsensusGate", () => {
       "2026-07-31T09:00:00+09:00",
     );
     const withoutRule = specConsensusGate.evaluate({
-      phase: "4_verify",
-      targetPhase: "5_done",
-      event: "before_pr_publish",
+      trigger: { type: "before_pr_publish", phase: "4_verify" },
       state: stateWithoutRule,
       profile,
       artifacts: { intent: highRiskIntent, verification: selfAckVerification },
     });
-    expect(withoutRule.pass).toBe(true);
+    expect(withoutRule.some((d) => d.severity === "error")).toBe(false);
 
     // With the rule, on the exact same intent/verification/ack: effective risk is
     // recomputed to high, and the gate now requires override_reason for the self ack.
@@ -252,13 +286,11 @@ describe("specConsensusGate", () => {
       "ci-workflow-touch",
     ]);
     const withRule = specConsensusGate.evaluate({
-      phase: "4_verify",
-      targetPhase: "5_done",
-      event: "before_pr_publish",
+      trigger: { type: "before_pr_publish", phase: "4_verify" },
       state: stateWithRule,
       profile: profileWithRule,
       artifacts: { intent: highRiskIntent, verification: selfAckVerification },
     });
-    expect(withRule.pass).toBe(false);
+    expect(withRule.some((d) => d.severity === "error")).toBe(true);
   });
 });

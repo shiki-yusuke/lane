@@ -1,36 +1,40 @@
 import {
   DEFAULT_GATES,
+  type Diagnostic,
   type GateContext,
-  type GateResult,
+  type GateEvaluation,
+  type GateTrigger,
   canonicalVerificationContent,
   computeDigest,
   evaluateGates,
 } from "@lane/core";
-import type { Intent, LaneState, Phase, Profile } from "@lane/schemas";
+import type { Intent, LaneState, Profile } from "@lane/schemas";
+import { readCriticIfExists } from "./critic-store.js";
 import { readSpecMdIfExists } from "./spec-store.js";
 import { readVerificationIfExists } from "./verification-store.js";
 
 /**
- * Shared by validate.ts and advance.ts's 4_verify -> 5_done branch (design.md §3.3:
- * spec_consensus is evaluated at both `before_pr_publish` and 4_verify->5_done). Reads
- * spec.md/verification.yaml fresh from disk and computes their digests right here, so the
- * gate always checks the *current* on-disk content against whatever digest is recorded in
- * verification.yaml's spec_consensus — not a value someone forgot to refresh.
+ * Shared by validate.ts and advance.ts (gate-port review, 2026-08-06: both now evaluate
+ * gates on every transition/checkpoint, not just 5_done/before_pr_publish, so both need
+ * the same artifact-reading + digest-computation logic — reading verification.yaml/
+ * critic.yaml fresh from disk and computing spec.md/verification.yaml digests right here,
+ * so a gate always checks the *current* on-disk content against whatever digest is
+ * recorded in verification.yaml's spec_consensus, not a value someone forgot to refresh).
  *
- * Before Codex M1 review: advance's 5_done transition called createDoneOverlay directly,
- * with no gate check at all (must-1), and validate never populated specDigest, so a
- * content change after ack could never be detected (must-2). Both are fixed by always
- * routing through this one function.
+ * `readCriticIfExists` throws (schema error) if critic.yaml exists but is malformed — same
+ * "read-if-exists, but validate strictly when present" contract intent.yaml/
+ * verification.yaml already follow.
  */
-export function evaluateBeforePrPublishGates(
+export function buildGateContext(
   specDir: string,
   intentId: string,
   state: LaneState,
   intent: Intent,
   profile: Profile,
-  targetPhase: Phase,
-): GateResult {
+  trigger: GateTrigger,
+): GateContext {
   const verification = readVerificationIfExists(specDir, intentId);
+  const critic = readCriticIfExists(specDir, intentId, profile);
   let specDigest: GateContext["artifacts"]["specDigest"];
   if (verification) {
     const specContent = readSpecMdIfExists(specDir, intentId) ?? "";
@@ -39,13 +43,45 @@ export function evaluateBeforePrPublishGates(
       verification: computeDigest(canonicalVerificationContent(verification)),
     };
   }
-  const ctx: GateContext = {
-    phase: state.current_phase,
-    targetPhase,
-    event: "before_pr_publish",
+  return {
+    trigger,
     state,
     profile,
-    artifacts: { intent, verification: verification ?? undefined, specDigest },
+    artifacts: { intent, critic, verification: verification ?? undefined, specDigest },
   };
-  return evaluateGates(DEFAULT_GATES, ctx);
+}
+
+/** Builds the GateContext for `trigger` and evaluates DEFAULT_GATES against it in one call. */
+export function evaluateGatesForTrigger(
+  specDir: string,
+  intentId: string,
+  state: LaneState,
+  intent: Intent,
+  profile: Profile,
+  trigger: GateTrigger,
+): GateEvaluation {
+  return evaluateGates(
+    DEFAULT_GATES,
+    buildGateContext(specDir, intentId, state, intent, profile, trigger),
+  );
+}
+
+/**
+ * CLI-facing formatting: errors and warnings each prefixed with their gate id, so a
+ * message like "[success_criteria] ..." is traceable to the gate that raised it without
+ * needing to inspect the Diagnostic objects directly. Takes a plain diagnostics array
+ * (rather than a whole GateEvaluation) since validate.ts merges diagnostics from more than
+ * one evaluateGatesForTrigger() call before formatting.
+ */
+export function formatDiagnostics(diagnostics: readonly Diagnostic[]): {
+  errors: string[];
+  warnings: string[];
+} {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+  for (const d of diagnostics) {
+    const line = `[${d.gateId}] ${d.message}`;
+    (d.severity === "error" ? errors : warnings).push(line);
+  }
+  return { errors, warnings };
 }
