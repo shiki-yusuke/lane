@@ -178,6 +178,7 @@ program
   .argument("<intent-id>")
   .option("--spec-dir <path>")
   .option("--agent-cost-bin <path>", "override the agent-cost binary (defaults to PATH lookup)")
+  .option("--gh-bin <path>", "override the gh binary (defaults to PATH lookup)")
   .option("--post", "post/upsert the marker as a PR comment instead of only printing it")
   .option("--pr <number>", "overrides lane-state's own pr_url", Number)
   .option("--repository <owner/repo>", "overrides git-remote-derived repository")
@@ -187,6 +188,7 @@ program
       await runEmitMetrics(intentId, {
         specDir: opts.specDir,
         agentCostBin: opts.agentCostBin,
+        ghBin: opts.ghBin,
         post: opts.post,
         pr: opts.pr,
         repository: opts.repository,

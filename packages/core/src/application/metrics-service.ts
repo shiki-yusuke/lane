@@ -101,12 +101,23 @@ const KNOWN_TOKEN_KINDS = new Set<string>(TokenKindSchema.options);
 export interface RecordsFromRowsResult {
   records: TokenUsageRecord[];
   unknownTokenKinds: string[];
+  /**
+   * Rows with a null `agent`/`model`/`token_kind` (review round 2026-08-07, must-3): a
+   * `measure/v1` row is documented as always pre-grouped by (agent, model, token_kind), so
+   * a null here is a protocol violation from agent-cost, not a legitimate "nothing to
+   * report" shape. Previously these were silently dropped (same as a zero-token row),
+   * which let a measure/v1 contract deviation produce a coverage.status="complete"
+   * snapshot with quietly-missing records. The caller must fail the whole emit closed on
+   * these, the same as an unrecognized token_kind.
+   */
+  nullFieldRows: AgentCostRow[];
 }
 
 /**
  * Maps one activity's agent-cost measure rows into token-usage records (spec.md Rule 6 /
- * Rule 8: zero-token rows are dropped — they carry no information — and an unrecognized
- * token_kind is collected for the caller to hard-fail on, never silently skipped).
+ * Rule 8: zero-token rows are dropped — they carry no information — and both an
+ * unrecognized token_kind and a null agent/model/token_kind are collected for the caller
+ * to hard-fail on, never silently skipped).
  */
 export function tokenUsageRecordsFromRows(
   activityName: string,
@@ -114,9 +125,13 @@ export function tokenUsageRecordsFromRows(
 ): RecordsFromRowsResult {
   const records: TokenUsageRecord[] = [];
   const unknownTokenKinds: string[] = [];
+  const nullFieldRows: AgentCostRow[] = [];
   for (const row of rows) {
     if (row.tokens <= 0) continue;
-    if (!row.agent || !row.model || !row.token_kind) continue;
+    if (!row.agent || !row.model || !row.token_kind) {
+      nullFieldRows.push(row);
+      continue;
+    }
     if (!KNOWN_TOKEN_KINDS.has(row.token_kind)) {
       unknownTokenKinds.push(row.token_kind);
       continue;
@@ -134,7 +149,7 @@ export function tokenUsageRecordsFromRows(
       pricing_status: row.pricing_status === "lower_bound" ? "unpriced" : row.pricing_status,
     });
   }
-  return { records, unknownTokenKinds };
+  return { records, unknownTokenKinds, nullFieldRows };
 }
 
 export interface BuildCoverageInput {
@@ -235,6 +250,18 @@ export function parseAgentMetricsMarkerFields(
   return { payload_b64: fields.payload_b64, sha256: fields.sha256 };
 }
 
+// Mirrors the contract's own verify-fixtures.mjs BASE64_RE + `length % 4` check
+// byte-for-byte (review round 2026-08-07, must-2). Node's `Buffer.from(str, "base64")` is
+// a *lenient* decoder: it silently skips characters outside the base64 alphabet (and
+// tolerates malformed padding) rather than erroring, so e.g. appending a stray `!` to an
+// otherwise-valid payload_b64 still decodes to the exact same bytes -- which would also
+// still match the declared sha256, since the hash is computed over those same decoded
+// bytes. Without this explicit format check first, such a malformed-but-hash-matching
+// marker was silently accepted as valid, when the contract's own fixture-level test
+// (invalid-base64) requires it to be rejected on format grounds alone, not merely as a
+// side effect of some other check happening to also fail on a given fixture.
+const AGENT_METRICS_BASE64_RE = /^[A-Za-z0-9+/]+={0,2}$/;
+
 /**
  * Decodes+verifies a marker's payload_b64/sha256 (protocol doc section 2: sha256 covers
  * the decoded bytes, not the base64 text) and recomputes its upsert_key. Used by the
@@ -244,6 +271,9 @@ export function parseAgentMetricsMarkerFields(
 export function decodeAndVerifyAgentMetricsMarker(marker: string): TokenUsagePayload | undefined {
   const fields = parseAgentMetricsMarkerFields(marker);
   if (!fields) return undefined;
+  if (fields.payload_b64.length % 4 !== 0 || !AGENT_METRICS_BASE64_RE.test(fields.payload_b64)) {
+    return undefined;
+  }
   let bytes: Buffer;
   try {
     bytes = Buffer.from(fields.payload_b64, "base64");

@@ -43,6 +43,32 @@ one built by an unrelated emitter targeting the same public contract.
   cross-check, the full gate sequence, and a human-review-band approval all exercised for
   real, not just tested in isolation).
 
+**Review-round fixes (2026-08-07, post-PR):**
+
+- `--post` no longer leaks the marker to stdout before every precondition is satisfied.
+  Previously the marker was printed to stdout before the PR-number check and before the
+  publish call ran, so a failed `--post` (no PR number, or the publish itself failing)
+  still wrote the marker to stdout; the "created/updated `<url>`" status text was also
+  printed to stdout on success, mixing with the marker. Now stdout carries the marker and
+  nothing else on every path — a failed `--post` writes nothing to stdout at all, and the
+  status text always goes to stderr.
+- `decodeAndVerifyAgentMetricsMarker` now validates `payload_b64`'s format (the contract's
+  own `BASE64_RE` + `length % 4` check, mirrored from `verify-fixtures.mjs`) before
+  decoding it. Node's `Buffer.from(str, "base64")` is a lenient decoder that silently
+  skips out-of-alphabet characters, so a malformed `payload_b64` (e.g. one with a stray
+  trailing character) could still decode to the same bytes and match the declared
+  `sha256` — previously accepted as valid despite being malformed on format grounds,
+  which the `GithubCommentMetricsPublisher`'s own upsert-candidate re-verification relied
+  on.
+- `tokenUsageRecordsFromRows` no longer silently drops an `agent-cost` row with a null
+  `agent`/`model`/`token_kind`. A `measure/v1` row is documented as always pre-grouped by
+  those three fields, so a null is a protocol violation, not a "nothing to report" shape
+  — it now aborts the whole emit (`measure_protocol_violation`) the same as an
+  unrecognized `token_kind`, instead of silently producing a `coverage.status="complete"`
+  snapshot with a quietly-missing record.
+- New `--gh-bin` flag (mirrors the existing `--agent-cost-bin`) to override the `gh`
+  binary `GithubCommentMetricsPublisher` shells out to.
+
 ## 0.2.0
 
 Gate-port review: ports two more of the private reference implementation's gates

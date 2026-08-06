@@ -1064,6 +1064,22 @@ spec-lane の実装部品が契約の期待結果と一致するかを見る）�
 **defer（今回やらない、MP-4/5 で対応予定）**: reference harvester 自体の新規実装、
 report 層（cost per PR 等の集計）。
 
+**レビューラウンド修正（2026-08-07、PR後・must×2+should×1）**: (1) `--post` が全前提
+（PR番号解決・投稿成功）を満たす前に marker を stdout に出していたため、投稿失敗経路
+でも marker が漏れ、成功時は投稿結果テキストも stdout に混在していた。修正: 失敗経路は
+stdout に1バイトも出さず、成功時の "created/updated <url>" は常に stderr へ。(2)
+`decodeAndVerifyAgentMetricsMarker` の base64 検証が契約より緩く、Node の
+`Buffer.from(.., "base64")` が不正文字を無視して decode するため、末尾に余剰文字を
+付けても同一バイト列・同一 sha256 を再現できる不正 marker を valid 扱いし得た。修正:
+契約の `verify-fixtures.mjs` と同じ `BASE64_RE` + `length % 4` チェックを decode 前に
+追加。(3) `tokenUsageRecordsFromRows` が agent/model/token_kind が null の row を
+zero-token row と同様に黙って捨てていたが、measure/v1 は常に group 済み row を返す契約
+のため null は契約逸脱であり、`measure_protocol_violation` として emit 全体を
+fail-closed で中断する仕様に変更（unknown_token_kind と同じ扱い）。テストは
+`packages/core/test/metrics-service.test.ts`（null-field row 収集・不正 base64 拒否）と
+`packages/cli/test/emit-metrics.test.ts`（--post の stdout 純度・fail-closed の両経路、
+measure_protocol_violation 中断）に追加。
+
 ---
 
 ## 6. モノレポ構成

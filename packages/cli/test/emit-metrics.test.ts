@@ -1,11 +1,34 @@
 import { chmodSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { runAdvance } from "../src/commands/advance.js";
 import { runEmitMetrics } from "../src/commands/emit-metrics.js";
 import { runStart } from "../src/commands/start.js";
 import { readLaneState, writeLaneState } from "../src/state-store.js";
+
+// Review round 2026-08-07, must-1's own test requirement: a dedicated fake `gh` for the
+// --post success path, in the same style as adapters/test/metrics-github-comment.test.ts
+// (not fixtures/fake-cli-recorder.mjs, which only ever returns one static stdout value).
+// This one always reports "no existing comments" so every call takes the create/POST path.
+function writeFakeGh(dir: string): string {
+  const path = join(dir, "gh");
+  const script = `#!/usr/bin/env bash
+for arg in "$@"; do
+  if [ "$arg" = "-X" ]; then
+    echo '{"html_url": "https://github.com/octo-org/spec-lane-demo/pull/1#issuecomment-999"}'
+    exit 0
+  fi
+done
+if [[ "$*" == *"comments"* && "$*" != *"-f"* ]]; then
+  exit 0 # empty stdout => no existing comments
+fi
+echo '{"html_url": "https://github.com/octo-org/spec-lane-demo/pull/1#issuecomment-1000"}'
+`;
+  writeFileSync(path, script);
+  chmodSync(path, 0o755);
+  return path;
+}
 
 // Gate-port/MP-3 review — runEmitMetrics constructs AgentCostTelemetryAdapter directly
 // (matching calibrate.ts/next.ts's own no-DI convention), so these tests use a fake
@@ -237,15 +260,107 @@ describe("runEmitMetrics", () => {
     ]);
   });
 
-  it("--post fails cleanly (marker still built) when there is no PR number to post to", async () => {
+  it("aborts with measure_protocol_violation and prints nothing when agent-cost returns a row with a null agent/model/token_kind", async () => {
+    addLedgerEntry(specDir, intentId, { ledger_entry_id: "a", phase: "3_implement" });
+    const bin = writeFakeAgentCost(fakeBinDir, [
+      {
+        month: null,
+        agent: null,
+        model: "claude-sonnet-5",
+        token_kind: "output",
+        tokens: 500,
+        priced_tokens: 500,
+        unpriced_tokens: 0,
+        estimated_cost_usd: 0.01,
+        credits: 0,
+        pricing_status: "priced",
+      },
+    ]);
     const result = await runEmitMetrics(intentId, {
       specDir,
       repository: "octo-org/spec-lane-demo",
-      post: true,
+      agentCostBin: bin,
       emitterVersion: "0.3.0",
     });
-    expect(result.exitCode).toBe(2);
-    expect(result.message).toContain("--post requires a PR number");
+    expect(result.exitCode).toBe(3);
+    expect(result.message).toContain("measure_protocol_violation");
+  });
+
+  // Review round 2026-08-07, must-1: --post's every precondition must be checked *before*
+  // anything reaches stdout -- a failed --post must leave stdout completely empty (the
+  // marker text must never leak there even though it was already built).
+  it("--post fails cleanly (marker still built, nothing printed to stdout) when there is no PR number to post to", async () => {
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    try {
+      const result = await runEmitMetrics(intentId, {
+        specDir,
+        repository: "octo-org/spec-lane-demo",
+        post: true,
+        emitterVersion: "0.3.0",
+      });
+      expect(result.exitCode).toBe(2);
+      expect(result.message).toContain("--post requires a PR number");
+      expect(logSpy).not.toHaveBeenCalled();
+    } finally {
+      logSpy.mockRestore();
+    }
+  });
+
+  // Review round 2026-08-07, must-1: on a successful --post, stdout must carry the marker
+  // and *only* the marker -- the "created <url>" status text belongs on stderr.
+  it("--post prints only the marker to stdout on success; the created/updated status goes to stderr", async () => {
+    addLedgerEntry(specDir, intentId, { ledger_entry_id: "a", phase: "3_implement" });
+    const agentCostBin = writeFakeAgentCost(fakeBinDir, []); // no rows => no_data, and fast
+    const ghBin = writeFakeGh(fakeBinDir);
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const result = await runEmitMetrics(intentId, {
+        specDir,
+        repository: "octo-org/spec-lane-demo",
+        agentCostBin,
+        post: true,
+        pr: 1,
+        ghBin,
+        emitterVersion: "0.3.0",
+      });
+      expect(result.exitCode).toBe(0);
+      expect(decodeMarker(result.message).data.coverage.status).toBe("no_data");
+      // console.log is never called directly by runEmitMetrics itself -- the marker
+      // reaches stdout only via main.ts's report(), which this test doesn't exercise, so
+      // the assertion that matters here is that logSpy stayed silent (no premature/extra
+      // stdout write) and the status text landed on stderr instead.
+      expect(logSpy).not.toHaveBeenCalled();
+      expect(errorSpy.mock.calls.flat().join("\n")).toContain("issuecomment-1000");
+    } finally {
+      logSpy.mockRestore();
+      errorSpy.mockRestore();
+    }
+  });
+
+  it("--post fails cleanly (nothing printed) when the gh publish call itself fails", async () => {
+    addLedgerEntry(specDir, intentId, { ledger_entry_id: "a", phase: "3_implement" });
+    const agentCostBin = writeFakeAgentCost(fakeBinDir, []); // no rows => no_data, and fast
+    const brokenGhBin = join(fakeBinDir, "broken-gh");
+    writeFileSync(brokenGhBin, "#!/usr/bin/env bash\nexit 1\n");
+    chmodSync(brokenGhBin, 0o755);
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    try {
+      const result = await runEmitMetrics(intentId, {
+        specDir,
+        repository: "octo-org/spec-lane-demo",
+        agentCostBin,
+        post: true,
+        pr: 1,
+        ghBin: brokenGhBin,
+        emitterVersion: "0.3.0",
+      });
+      expect(result.exitCode).toBe(2);
+      expect(result.message).toContain("posting failed");
+      expect(logSpy).not.toHaveBeenCalled();
+    } finally {
+      logSpy.mockRestore();
+    }
   });
 
   it("fails cleanly when repository cannot be determined and was not given", async () => {

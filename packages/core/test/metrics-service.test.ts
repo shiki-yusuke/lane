@@ -165,6 +165,29 @@ describe("tokenUsageRecordsFromRows", () => {
     ]);
     expect(records[0]?.pricing_status).toBe("unpriced");
   });
+
+  // Review round 2026-08-07, should-3: measure/v1 rows are documented as always
+  // pre-grouped by (agent, model, token_kind), so a null here is a protocol violation the
+  // caller must fail the whole emit closed on -- not a "nothing to report" shape to
+  // silently drop the same way a zero-token row is.
+  it.each([
+    ["agent", { agent: null }],
+    ["model", { model: null }],
+    ["token_kind", { token_kind: null }],
+  ] as const)("collects (never silently drops) a row with a null %s", (_field, overrides) => {
+    const nonZeroRow = row(overrides);
+    const { records, nullFieldRows } = tokenUsageRecordsFromRows("3_implement", [nonZeroRow]);
+    expect(records).toHaveLength(0);
+    expect(nullFieldRows).toEqual([nonZeroRow]);
+  });
+
+  it("still drops a zero-token row even if it also has a null field (no information either way)", () => {
+    const { records, nullFieldRows } = tokenUsageRecordsFromRows("3_implement", [
+      row({ tokens: 0, agent: null }),
+    ]);
+    expect(records).toHaveLength(0);
+    expect(nullFieldRows).toHaveLength(0);
+  });
 });
 
 describe("buildCoverage", () => {
@@ -296,5 +319,23 @@ describe("buildTokenUsagePayload / buildAgentMetricsMarker", () => {
     const marker = buildAgentMetricsMarker(payload);
     const tampered = marker.replace(/sha256=[0-9a-f]+/, `sha256=${"0".repeat(64)}`);
     expect(decodeAndVerifyAgentMetricsMarker(tampered)).toBeUndefined();
+  });
+
+  // Review round 2026-08-07, must-2: Node's Buffer.from(str, "base64") is a *lenient*
+  // decoder -- it silently skips characters outside the base64 alphabet, so appending a
+  // stray "!" to an otherwise-valid payload_b64 still decodes to the exact same bytes,
+  // which still hashes to the same (correctly-declared) sha256. Before the fix, this was
+  // wrongly accepted as valid even though the contract requires rejecting malformed
+  // base64 on format grounds alone (mirrored from verify-fixtures.mjs's own BASE64_RE +
+  // `length % 4` check).
+  it("decodeAndVerifyAgentMetricsMarker rejects a payload_b64 with a stray trailing character, even though it decodes to the same bytes and matches the declared sha256", () => {
+    const payload = buildTokenUsagePayload({
+      ...baseInput,
+      records: [],
+      coverage: buildCoverage({ eligibleEntries: 0, measuredEntries: 0, omissions: [] }),
+    });
+    const marker = buildAgentMetricsMarker(payload);
+    const malformed = marker.replace(/payload_b64=(\S+)/, "payload_b64=$1!");
+    expect(decodeAndVerifyAgentMetricsMarker(malformed)).toBeUndefined();
   });
 });

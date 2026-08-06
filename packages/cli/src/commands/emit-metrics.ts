@@ -17,6 +17,8 @@ import type { CommandResult } from "./start.js";
 export interface EmitMetricsOptions {
   specDir?: string;
   agentCostBin?: string;
+  /** Override the `gh` binary GithubCommentMetricsPublisher shells out to (defaults to PATH lookup). */
+  ghBin?: string;
   /** Post the marker as a PR comment (upsert by identity) instead of only printing it. */
   post?: boolean;
   /** Overrides lane-state's own pr_url for --post. */
@@ -83,10 +85,17 @@ export async function runEmitMetrics(
       }
       continue;
     }
-    const { records: activityRecords, unknownTokenKinds } = tokenUsageRecordsFromRows(
-      group.activityName,
-      measured.total.rows,
-    );
+    const {
+      records: activityRecords,
+      unknownTokenKinds,
+      nullFieldRows,
+    } = tokenUsageRecordsFromRows(group.activityName, measured.total.rows);
+    if (nullFieldRows.length > 0) {
+      return {
+        exitCode: 3,
+        message: `measure_protocol_violation: agent-cost returned ${nullFieldRows.length} row(s) with a null agent/model/token_kind for activity "${group.activityName}" (measure/v1 rows are documented as always pre-grouped) — aborting without printing or posting anything`,
+      };
+    }
     if (unknownTokenKinds.length > 0) {
       return {
         exitCode: 3,
@@ -148,11 +157,15 @@ export async function runEmitMetrics(
 
   // spec.md Rule 1: marker to stdout, diagnostics to stderr, never mixed on one stream —
   // a caller piping stdout to a harvester or a file must get exactly the marker, nothing
-  // else. Diagnostics always go straight to stderr via console.error() here rather than
+  // else, and only once the marker is actually known-good and (for --post) successfully
+  // posted. Diagnostics always go straight to stderr via console.error() here rather than
   // through CommandResult.message (which main.ts's report() only ever sends to one stream
-  // at a time), and the marker text becomes CommandResult.message only on the no-post path
-  // so report() is the sole place that actually prints it (console.log() it directly here
-  // too would double-print it).
+  // at a time -- console.log on exitCode:0, console.error otherwise). Review round
+  // 2026-08-07 (must-1): every --post precondition (PR number resolved, publish actually
+  // succeeded) must be satisfied *before* anything reaches stdout -- a failed --post must
+  // leave stdout completely empty, and a successful --post's own "created/updated <url>"
+  // status text must go to stderr, not stdout, so stdout carries the marker and nothing
+  // else on every path, --post or not.
   for (const omission of omissions) {
     console.error(`omission ${omission.entry_id}: ${omission.reason} — ${omission.detail ?? ""}`);
   }
@@ -162,24 +175,25 @@ export async function runEmitMetrics(
     return { exitCode: 0, message: marker };
   }
 
-  console.log(marker);
   if (prNumber == null) {
     return {
       exitCode: 2,
-      message: "--post requires a PR number (lane-state has no pr_url and --pr was not given)",
+      message:
+        "--post requires a PR number (lane-state has no pr_url and --pr was not given) — nothing printed or posted",
     };
   }
-  const publisher = new GithubCommentMetricsPublisher();
+  const publisher = new GithubCommentMetricsPublisher({ ghBin: opts.ghBin });
   try {
     const result = await publisher.upsert(marker, {
       repository: { provider: "github", id: repository },
       prNumber,
     });
-    return { exitCode: 0, message: `${result.action} ${result.url}` };
+    console.error(`${result.action} ${result.url}`);
+    return { exitCode: 0, message: marker };
   } catch (err) {
     return {
       exitCode: 2,
-      message: `marker built above, but posting failed: ${err instanceof Error ? err.message : String(err)}`,
+      message: `posting failed, nothing printed or posted: ${err instanceof Error ? err.message : String(err)}`,
     };
   }
 }
