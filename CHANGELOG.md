@@ -4,6 +4,45 @@ All notable changes to `lane`/`spec-lane` are documented here. This project is p
 (alpha); breaking changes between minor releases are expected and are not accompanied by a
 deprecation period.
 
+## 0.3.0
+
+Adds `lane emit-metrics <intent-id> [--post] [--pr N]`: an emitter for the external,
+normative `agent-metrics:v1`/`token-usage/v1` contract (`ai-agent-skills-playbook`'s
+`docs/protocols/agent-metrics-v1.md` + `contracts/agent-metrics/v1/`, vendored at
+`contracts/agent-metrics/UPSTREAM`'s pinned commit). No spec-lane-specific vocabulary
+reaches the wire format — the marker this command builds/posts is indistinguishable from
+one built by an unrelated emitter targeting the same public contract.
+
+- Reads a lane's `cost_ledger`, groups KPI-eligible entries by activity (phase), dedupes
+  session ids, and calls the existing (read-only) `TelemetryAdapter.measure()` once per
+  activity. Fails closed (prints/posts nothing) if the same session id spans more than one
+  activity (`ambiguous_session_attribution`) or if `agent-cost` returns an unrecognized
+  `token_kind`.
+- Never fabricates a record for an entry it can't honestly attribute a breakdown to
+  (manual source, no session ids, or no matching `agent-cost` rows) — each becomes a
+  `data.coverage.omissions[]` entry with a machine-readable reason instead.
+- `--post` upserts by identity: it searches the target PR's existing comments, decodes and
+  independently re-verifies (sha256 + recomputed `upsert_key`, never trusting a declared
+  value) any `agent-metrics:v1` marker found, and updates the matching comment in place
+  rather than creating a duplicate.
+- New port `MetricsPublisher` (`core/ports/metrics-publisher.ts`) and adapter
+  `GithubCommentMetricsPublisher` — deliberately not folded into `VcsAdapter` or
+  `TrackerAdapter.annotatePr` (the latter already posts PR comments but has no
+  upsert-by-identity semantics); see `docs/design.md` §4.5 and this lane's own
+  `docs/spec/I-2026-08-07-agent-metrics-emitter/spec.md` for why.
+- New, contract-exact 11-key personal-dimension scanner (`core/agent-metrics-goodhart.ts`),
+  kept deliberately separate from the existing, smaller, spec-lane-internal
+  `core/goodhart.ts` (7 keys) — the public contract's own forbidden-key set is larger and
+  versioned externally; the two files carry cross-reference comments to each other so a
+  future key-set change doesn't silently drift the two apart.
+- `packages/schemas/src/agent-cost.ts`'s `AgentCostRowSchema` (previously an opaque
+  `z.record`, unused beyond totals) is now modeled to `agent-cost`'s real row shape —
+  confirmed additive-safe: no existing test or fixture referenced its opaque fields.
+- This feature was itself implemented as the first real task run through spec-lane's own
+  `lane` workflow after switching over to it (premise_evidence, a dependency/path
+  cross-check, the full gate sequence, and a human-review-band approval all exercised for
+  real, not just tested in isolation).
+
 ## 0.2.0
 
 Gate-port review: ports two more of the private reference implementation's gates
