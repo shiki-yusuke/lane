@@ -15,7 +15,7 @@ import { runStatus } from "./commands/status.js";
 import { runValidate } from "./commands/validate.js";
 
 const program = new Command();
-program.name("lane").description("Delivery lane orchestrator (TS)").version("0.1.0");
+program.name("lane").description("Delivery lane orchestrator (TS)").version("0.2.0");
 
 function report(result: CommandResult): never {
   if (result.exitCode === 0) {
